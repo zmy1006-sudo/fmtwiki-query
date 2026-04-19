@@ -3,6 +3,7 @@ import { diseases, searchDiseases, type Disease } from './data/diseases';
 import { teams, teamCategories, filterTeams, type Team } from './data/teams';
 import { aiApps, appTypes, filterAIApps, type AIApp, type AppType, maturityColors, typeColors } from './data/aiApps';
 import { sciencePapers, type SciencePaper } from './data/science';
+import { literature } from './data/literature';
 import { decisionTree, getNodeById, verdictStyleMap, verdictColors, type DecisionNode, type FMTDecision } from './data/decisionTree';
 import { EvidenceGuide } from './EvidenceGuide';
 
@@ -11,13 +12,14 @@ interface DoctorPortalProps {
   onOpenAISearch: () => void;
 }
 
-type DoctorTab = 'disease' | 'teams' | 'ai' | 'science';
+type DoctorTab = 'disease' | 'teams' | 'ai' | 'scienceLit';
 type DoctorView =
   | { kind: 'list'; tab: DoctorTab }
   | { kind: 'disease'; disease: Disease }
   | { kind: 'team'; team: Team }
   | { kind: 'aiApp'; app: AIApp }
-  | { kind: 'science'; paper: SciencePaper };
+  | { kind: 'science'; paper: SciencePaper }
+  | { kind: 'literature'; entry: any };
 
 // ── Icons ──────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -671,50 +673,169 @@ function AIAppDetail({ app, onBack }: { app: AIApp; onBack: () => void }) {
 }
 
 // ── Science Tab ─────────────────────────────────────────────
-function ScienceTab({ onSelect }: { onSelect: (p: SciencePaper) => void }) {
+// ── Science + Literature 合并Tab ────────────────────────────────
+type LitFilter = 'all' | 'science' | 'literature' | 'rcdi' | 'ibd' | 'oncology' | 'metabolic' | 'neuro';
+
+const LIT_FILTER_LABELS: Record<LitFilter, string> = {
+  all: '全部',
+  science: 'Science',
+  literature: '核心文献',
+  rcdi: 'rCDI',
+  ibd: 'IBD',
+  oncology: '肿瘤',
+  metabolic: '代谢',
+  neuro: '神经精神',
+};
+
+function ScienceLitTab({
+  onSelectPaper,
+  onSelectLit,
+}: {
+  onSelectPaper: (p: SciencePaper) => void;
+  onSelectLit: (e: any) => void;
+}) {
+  const [filter, setFilter] = useState<LitFilter>('all');
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return null; // 全部显示
+    if (filter === 'science') return { type: 'science' as const };
+    if (filter === 'literature') return { type: 'literature' as const };
+    // 按疾病筛选
+    const diseaseMap: Record<string, string[]> = {
+      rcdi: ['rCDI', 'rcdi', '复发性艰难梭菌', '艰难梭菌'],
+      ibd: ['IBD', 'UC', 'CD', '溃疡性结肠炎', '克罗恩病'],
+      oncology: ['肿瘤', '癌症', '黑色素瘤', 'ICI', 'onco', 'Oncology'],
+      metabolic: ['代谢', '糖尿病', '肥胖', 'Metabolic', 'NAFLD'],
+      neuro: ['神经', '帕金森', 'ASD', '自闭症', 'Parkinson', 'Neuro'],
+    };
+    return { type: 'disease' as const, diseases: diseaseMap[filter] || [] };
+  }, [filter]);
+
+  const scienceBadge = (year: number, volume: string) => (
+    <span className="px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-xs text-red-600 font-bold">Science</span>
+  );
+  const litBadge = (grade: string) => (
+    <span className="px-1.5 py-0.5 bg-purple-50 border border-purple-200 rounded text-xs text-purple-600 font-bold">文献</span>
+  );
+
+  const Card = ({
+    item, badge, onClick,
+  }: { item: any; badge: React.ReactNode; onClick: () => void }) => (
+    <button onClick={onClick}
+      className="w-full text-left bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-sm transition group">
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            {badge}
+            <span className="text-xs text-gray-400">{item.year}</span>
+            {item.evidenceGrade && (
+              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                item.evidenceGrade.includes('1a') || item.evidenceGrade.includes('1b')
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : item.evidenceGrade.includes('2')
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200'
+              }`}>{item.evidenceGrade}</span>
+            )}
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 group-hover:text-indigo-700 transition leading-snug line-clamp-2">{item.title}</h3>
+          <p className="text-xs text-gray-500 mt-1 truncate">
+            {Array.isArray(item.authors) ? item.authors.slice(0, 3).join(', ') + (item.authors.length > 3 ? ` +${item.authors.length - 3}` : '') : ''}
+          </p>
+          {item.disease && (
+            <span className="inline-block mt-1.5 px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs text-gray-500">{item.disease}</span>
+          )}
+        </div>
+        <svg className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </button>
+  );
+
+  const total = sciencePapers.length + literature.length;
+  const showScience = !filtered || filtered.type === 'science';
+  const showLit = !filtered || filtered.type === 'literature';
+
   return (
     <div>
+      {/* 顶部标题栏 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-3">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-              <span className="text-xl">🔬</span>
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <span className="text-xl">📚</span>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-900">Science 期刊追踪</h2>
-              <p className="text-xs text-gray-500">Science FMT / 微生物组 / 肠-脑轴 核心论文</p>
+              <h2 className="text-sm font-bold text-gray-900">Science + 核心文献</h2>
+              <p className="text-xs text-gray-500">Science 期刊 · PubMed 验证文献 · 共{total}篇</p>
             </div>
-            <span className="ml-auto px-2 py-0.5 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 font-medium">每日更新</span>
+          </div>
+          {/* 筛选标签 */}
+          <div className="flex gap-2 flex-wrap">
+            {(Object.keys(LIT_FILTER_LABELS) as LitFilter[]).map(k => (
+              <button key={k} onClick={() => setFilter(k)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                  filter === k
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
+                }`}>
+                {LIT_FILTER_LABELS[k]}
+                {k === 'science' && `(${sciencePapers.length})`}
+                {k === 'literature' && `(${literature.length})`}
+              </button>
+            ))}
           </div>
         </div>
       </div>
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <p className="text-xs text-gray-400 mb-3">{sciencePapers.length} 篇 Science 论文</p>
-        <div className="space-y-3">
-          {sciencePapers.map((p) => (
-            <button key={p.id} onClick={() => onSelect(p)}
-              className="w-full text-left bg-white rounded-xl border border-gray-200 p-4 hover:border-red-300 hover:shadow-sm transition group">
-              <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-xs font-bold text-red-600">Science</span>
-                    <span className="text-xs text-gray-400">{p.year} · Vol.{p.volume}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 group-hover:text-red-700 transition leading-snug">{p.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{p.authors.slice(0,3).join(', ')}{p.authors.length > 3 ? ` +${p.authors.length-3}` : ''}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {p.tags.map(tag => (
-                      <span key={tag} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-                <svg className="w-4 h-4 text-gray-300 group-hover:text-red-400 transition flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+
+      <div className="max-w-4xl mx-auto px-4 py-4 space-y-6">
+        {/* Science 期刊 */}
+        {showScience && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold text-red-600">🔬 Science 期刊</span>
+              <span className="text-xs text-gray-400">{sciencePapers.length} 篇</span>
+            </div>
+            <div className="space-y-2">
+              {sciencePapers.map(p => (
+                <Card key={p.id} item={p}
+                  badge={scienceBadge(p.year, p.volume)}
+                  onClick={() => onSelectPaper(p)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 核心文献 */}
+        {showLit && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold text-purple-600">📖 核心文献（PubMed 验证）</span>
+              <span className="text-xs text-gray-400">{literature.length} 篇</span>
+            </div>
+            {filtered && filtered.type === 'disease' ? (
+              // 按疾病筛选模式
+              <div className="space-y-2">
+                {literature
+                  .filter(l => filtered.diseases.some(d => (l as any).disease?.includes(d)))
+                  .map(l => (
+                    <Card key={l.id} item={l}
+                      badge={litBadge(l.evidenceGrade)}
+                      onClick={() => onSelectLit(l)} />
+                  ))}
               </div>
-            </button>
-          ))}
-        </div>
+            ) : (
+              <div className="space-y-2">
+                {literature.map(l => (
+                  <Card key={l.id} item={l}
+                    badge={litBadge(l.evidenceGrade)}
+                    onClick={() => onSelectLit(l)} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -807,6 +928,78 @@ function ScienceDetail({ paper, onBack }: { paper: SciencePaper; onBack: () => v
                 ) : null;
               })}
             </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Literature Detail ────────────────────────────────────
+function LiteratureDetail({ entry, onBack }: { entry: any; onBack: () => void }) {
+  const gradeColor = (g: string) => {
+    if (!g) return 'bg-gray-100 text-gray-600';
+    if (g.includes('1a') || g.includes('1b')) return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    if (g.includes('2')) return 'bg-blue-50 text-blue-700 border border-blue-200';
+    return 'bg-amber-50 text-amber-700 border border-amber-200';
+  };
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+          <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition"><BackIcon /></button>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-bold">核心文献</span>
+              {(entry as any).evidenceGrade && (
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${gradeColor((entry as any).evidenceGrade)}`}>{(entry as any).evidenceGrade}</span>
+              )}
+            </div>
+          </div>
+          {(entry as any).pmid && (
+            <a href={`https://pubmed.ncbi.nlm.nih.gov/${(entry as any).pmid}/`} target="_blank" rel="noopener noreferrer"
+              className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 hover:bg-blue-100 transition flex items-center gap-1">
+              PubMed <ExternalIcon />
+            </a>
+          )}
+        </div>
+      </div>
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs font-bold text-purple-700 mb-2 uppercase tracking-wide">论文标题</p>
+          <h1 className="text-base font-bold text-gray-900 leading-snug">{(entry as any).title}</h1>
+          <p className="text-sm text-gray-600 mt-3">{Array.isArray((entry as any).authors) ? (entry as any).authors.join(' · ') : (entry as any).authors}</p>
+          <div className="flex flex-wrap items-center gap-3 mt-3">
+            {(entry as any).journal && <span className="text-xs text-gray-500">{(entry as any).journal}</span>}
+            {(entry as any).year && <span className="text-xs text-gray-400">({(entry as any).year})</span>}
+            {(entry as any).pmid && <span className="text-xs text-gray-400">PMID: {(entry as any).pmid}</span>}
+          </div>
+        </div>
+        {(entry as any).evidenceGrade && (
+          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-purple-700 mb-1.5 uppercase">Oxford 证据等级</p>
+            <p className="text-sm font-semibold text-gray-900">{(entry as any).evidenceGrade}</p>
+          </div>
+        )}
+        {(entry as any).disease && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-500 mb-1.5">适应证 / 研究领域</p>
+            <span className="px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full text-sm text-indigo-700 font-medium">{(entry as any).disease}</span>
+          </div>
+        )}
+        {((entry as any).population || (entry as any).intervention || (entry as any).outcomes) && (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <p className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">研究详情</p>
+            {(entry as any).population && <div><p className="text-xs font-semibold text-gray-700 mb-1">研究人群</p><p className="text-sm text-gray-600">{(entry as any).population}</p></div>}
+            {(entry as any).intervention && <div><p className="text-xs font-semibold text-gray-700 mb-1">干预措施</p><p className="text-sm text-gray-600">{(entry as any).intervention}</p></div>}
+            {(entry as any).outcomes && <div><p className="text-xs font-semibold text-gray-700 mb-1">主要结论</p><p className="text-sm text-gray-600">{(entry as any).outcomes}</p></div>}
+          </div>
+        )}
+        {(entry as any).doi && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-500 mb-1.5">DOI</p>
+            <a href={`https://doi.org/${(entry as any).doi}`} target="_blank" rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 break-all">{(entry as any).doi}</a>
           </div>
         )}
       </div>
@@ -988,7 +1181,7 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
     { id: 'disease' as DoctorTab, label: '💊 适应证', count: diseases.length },
     { id: 'teams' as DoctorTab, label: '🔬 团队', count: teams.length },
     { id: 'ai' as DoctorTab, label: '🤖 AI应用', count: aiApps.length },
-    { id: 'science' as DoctorTab, label: 'Science', count: sciencePapers.length },
+    { id: 'scienceLit' as DoctorTab, label: '📚文献', count: sciencePapers.length + literature.length },
   ];
 
   return (
@@ -1052,7 +1245,12 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
             {view.tab === 'disease' && <DiseaseTab onSelect={d => setView({ kind: 'disease', disease: d })} />}
             {view.tab === 'teams' && <TeamsTab onSelect={t => setView({ kind: 'team', team: t })} />}
             {view.tab === 'ai' && <AIAppsTab onSelect={a => setView({ kind: 'aiApp', app: a })} />}
-            {view.tab === 'science' && <ScienceTab onSelect={p => setView({ kind: 'science', paper: p })} />}
+            {view.tab === 'scienceLit' && (
+              <ScienceLitTab
+                onSelectPaper={p => setView({ kind: 'science', paper: p })}
+                onSelectLit={e => setView({ kind: 'literature', entry: e })}
+              />
+            )}
           </>
         )}
         {view.kind === 'disease' && <DiseaseDetail disease={view.disease} onBack={() => setView({ kind: 'list', tab: 'disease' })} onShowEvidenceGuide={() => setShowEvidenceGuide(true)} />}
@@ -1063,7 +1261,8 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
             allTeams={teams} />
         )}
         {view.kind === 'aiApp' && <AIAppDetail app={view.app} onBack={() => setView({ kind: 'list', tab: 'ai' })} />}
-        {view.kind === 'science' && <ScienceDetail paper={view.paper} onBack={() => setView({ kind: 'list', tab: 'science' })} />}
+        {view.kind === 'science' && <ScienceDetail paper={view.paper} onBack={() => setView({ kind: 'list', tab: 'scienceLit' })} />}
+        {view.kind === 'literature' && <LiteratureDetail entry={view.entry} onBack={() => setView({ kind: 'list', tab: 'scienceLit' })} />}
       </div>
 
       {/* Disclaimer */}

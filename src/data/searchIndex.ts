@@ -4,7 +4,15 @@ import { aiApps } from './aiApps';
 import { patientEduArticles } from './patientEdu';
 import { sciencePapers } from './science';
 import { drugInteractions } from './drugInteractions';
+import { guidelines } from './guidelines';
+import { literature } from './literature';
+import { glossary } from './glossary';
+import { protocols } from './protocols';
+import { safety } from './safety';
+import { mechanisms } from './mechanisms';
 
+// 索引缓存：惰性构建，首次搜索时构建一次，之后复用
+let _searchIndexCache: SearchRecord[] | null = null;
 // =============================================================================
 // 中文同义词词典（内置，无需API）
 // =============================================================================
@@ -90,7 +98,7 @@ function extractSnippet(content: string, queryTokens: string[], maxLen = 160): s
 // =============================================================================
 export interface SearchRecord {
   id: string;
-  type: 'disease' | 'team' | 'aiApp' | 'patientEdu' | 'science' | 'drug';
+  type: 'disease' | 'team' | 'aiApp' | 'patientEdu' | 'science' | 'drug' | 'guideline' | 'literature' | 'glossary' | 'protocol' | 'safety' | 'mechanism';
   title: string;
   content: string;
   summary: string;
@@ -118,6 +126,8 @@ export interface SearchRecord {
     journal?: string;
     year?: string;
     doi?: string;
+    pmid?: string;
+    organization?: string;
   };
 }
 
@@ -125,7 +135,7 @@ export interface SearchRecord {
 // 构建搜索索引
 // =============================================================================
 function buildSearchIndex(): SearchRecord[] {
-  const records: SearchRecord[] = [];
+const records: SearchRecord[] = [];
 
   // ---- 疾病 ----
   diseases.forEach(d => {
@@ -256,8 +266,143 @@ function buildSearchIndex(): SearchRecord[] {
     });
   });
 
+  // ---- 指南共识 ----
+  guidelines.forEach(g => {
+    const sourceUrls = g.sources.map(s => s.url).filter(Boolean);
+    records.push({
+      id: `guideline-${g.id}`,
+      type: 'guideline',
+      title: g.title,
+      content: [
+        g.title, g.titleEn, g.organization,
+        g.scope, g.keyRecommendations.join(' '),
+        g.targetIndications.join(' '),
+      ].filter(Boolean).join(' '),
+      summary: `[${g.organization} · ${g.year}] ${g.scope}`,
+      url: sourceUrls[0],
+      portal: 'doctor',
+      tags: [g.type, g.country, String(g.year), ...g.targetIndications],
+      meta: { organization: g.organization, year: String(g.year), type: g.type },
+      clinicalMeta: {
+        organization: g.organization,
+        year: String(g.year),
+        refSource: sourceUrls.join(' '),
+      },
+    });
+  });
+
+  // ---- 核心文献 ----
+  literature.forEach(l => {
+    const sourceUrls = l.sources.map(s => s.url).filter(Boolean);
+    records.push({
+      id: `literature-${l.id}`,
+      type: 'literature',
+      title: l.title,
+      content: [
+        l.title, l.authors, l.journal,
+        l.evidenceGrade, l.keyFindings.join(' '),
+        l.population, l.outcomes.primary,
+        l.targetIndication,
+      ].filter(Boolean).join(' '),
+      summary: `[${l.journal} · ${l.year}] ${l.keyFindings[0] || ''}`.slice(0, 150),
+      url: sourceUrls[0],
+      portal: 'doctor',
+      tags: [l.studyType, l.targetIndication, l.evidenceGrade, String(l.year)],
+      meta: { journal: l.journal, year: String(l.year), pmid: l.pmid, studyType: l.studyType },
+      clinicalMeta: {
+        journal: l.journal,
+        year: String(l.year),
+        pmid: l.pmid,
+        refSource: sourceUrls.join(' '),
+      },
+    });
+  });
+
+  // ---- 核心术语 ----
+  glossary.forEach(t => {
+    records.push({
+      id: `glossary-${t.id}`,
+      type: 'glossary',
+      title: t.term,
+      content: [
+        t.term, t.termEn, t.definition,
+        (t.relatedTerms || []).join(' '),
+        (t.examples || []).join(' '),
+      ].filter(Boolean).join(' '),
+      summary: t.definition.slice(0, 120),
+      portal: 'both',
+      tags: [t.category, ...(t.relatedTerms || [])],
+      meta: { category: t.category },
+    });
+  });
+
+  // ---- 临床SOP ----
+  protocols.forEach(p => {
+    records.push({
+      id: `protocol-${p.id}`,
+      type: 'protocol',
+      title: p.name,
+      content: [
+        p.name, p.description,
+        p.steps.map(s => s.description).join(' '),
+        (p.keyPoints || []).join(' '),
+        p.indications.join(' '),
+      ].filter(Boolean).join(' '),
+      summary: p.description.slice(0, 120),
+      portal: 'doctor',
+      tags: [p.category, ...p.indications],
+      meta: { category: p.category },
+    });
+  });
+
+  // ---- 安全性数据 ----
+  safety.forEach(s => {
+    records.push({
+      id: `safety-${s.id}`,
+      type: 'safety',
+      title: s.name,
+      content: [
+        s.name, s.description,
+        (s.symptoms || []).join(' '),
+        s.management,
+        (s.warnings || []).join(' '),
+      ].filter(Boolean).join(' '),
+      summary: s.description.slice(0, 120),
+      portal: 'doctor',
+      tags: [s.category, ...(s.severity ? [s.severity] : [])],
+      meta: { category: s.category, severity: s.severity || '' },
+      clinicalMeta: {
+        severity: s.severity || '',
+      },
+    });
+  });
+
+  // ---- 肠-器官轴机制 ----
+  mechanisms.forEach(m => {
+    records.push({
+      id: `mechanism-${m.id}`,
+      type: 'mechanism',
+      title: m.name,
+      content: [
+        m.name, m.nameEn,
+        m.description,
+        m.keyPathways.map(p => `${p.name}：${p.effects.join('；')}`).join(' '),
+        (m.keyBacteria || []).join(' '),
+      ].filter(Boolean).join(' '),
+      summary: m.description.slice(0, 120),
+      portal: 'doctor',
+      tags: [m.category, ...(m.relatedOrgans || [])],
+      meta: { category: m.category },
+    });
+  });
+
   return records;
 }
+
+// =============================================================================
+// 索引缓存（模块级，一次构建全局复用）
+// =============================================================================
+let _cachedIndex: SearchRecord[] | null = null;
 
 // =============================================================================
 // 评分函数
@@ -302,7 +447,8 @@ export function search(
   const queryTokens = tokenize(expandQuery(query));
   if (queryTokens.length === 0) return [];
 
-  const index = buildSearchIndex();
+  if (_searchIndexCache === null) _searchIndexCache = buildSearchIndex();
+  const index = _searchIndexCache;
   const filtered = portal
     ? index.filter(r => r.portal === portal || r.portal === 'both')
     : index;
@@ -330,6 +476,12 @@ export const TYPE_LABELS: Record<ResultType, string> = {
   patientEdu: '📚 科普',
   science: '🔬 Science',
   drug: '💉 药物',
+  guideline: '📑 指南',
+  literature: '📚 文献',
+  glossary: '📖 术语',
+  protocol: '🔧 流程',
+  safety: '⚠️ 安全',
+  mechanism: '🧬 机制',
 };
 
 export const TYPE_COLORS: Record<ResultType, { bg: string; text: string; border: string }> = {
@@ -339,6 +491,12 @@ export const TYPE_COLORS: Record<ResultType, { bg: string; text: string; border:
   patientEdu: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-200' },
   science: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
   drug: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
+  guideline: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  literature: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+  glossary: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
+  protocol: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
+  safety: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+  mechanism: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
 };
 
 export interface GroupedResults {

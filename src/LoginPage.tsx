@@ -65,32 +65,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onEnter, onAISearch, onShowEviden
         </button>
       </div>
 
-      {/* AI 智能搜索入口 */}
-      <div className="mt-4 w-full max-w-2xl">
-        <button
-          onClick={() => onAISearch('doctor')}
-          className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium text-sm hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30"
-        >
-          <span className="text-lg">🔍</span>
-          <span>AI 智能搜索 · 输入问题，即时分析</span>
-        </button>
-        <button
-          onClick={() => onAISearch('patient')}
-          className="w-full mt-2 py-2.5 bg-white/10 text-blue-200 rounded-xl font-medium text-xs hover:bg-white/20 transition flex items-center justify-center gap-2"
-        >
-          <span className="text-sm">🔍</span>
-          <span>患者端AI搜索入口</span>
-        </button>
-        {onShowEvidenceGuide && (
+      {onShowEvidenceGuide && (
+        <div className="mt-4 w-full max-w-2xl">
           <button
             onClick={onShowEvidenceGuide}
-            className="w-full mt-2 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-medium text-sm hover:bg-blue-50 transition flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-medium text-sm hover:bg-blue-50 transition flex items-center justify-center gap-2"
           >
             <span className="text-lg">📊</span>
             <span>证据等级说明</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 底部版权信息 */}
       <div className="mt-10 text-center">

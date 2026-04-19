@@ -248,11 +248,13 @@ function DataDashboard() {
 // ─────────────────────────────────────────────
 // LandingPage — 主组件
 // ─────────────────────────────────────────────
-export function LandingPage({ onEnterDoctor, onEnterPatient, onEnterLandingB, onEnterLandingC }: {
+export function LandingPage({ onEnterDoctor, onEnterPatient, onEnterLandingB, onEnterLandingC, onEnterLandingD, onEnterLandingE }: {
   onEnterDoctor: () => void;
   onEnterPatient: () => void;
   onEnterLandingB: () => void;
   onEnterLandingC: () => void;
+  onEnterLandingD: () => void;
+  onEnterLandingE: () => void;
 }) {
   return (
     <div className="min-h-screen bg-[#050d1a] text-white overflow-x-hidden">
@@ -403,6 +405,18 @@ export function LandingPage({ onEnterDoctor, onEnterPatient, onEnterLandingB, on
             className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
           >
             🧬 Effect C · DNA双螺旋沉浸版 →
+          </button>
+          <button
+            onClick={onEnterLandingD}
+            className="text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
+          >
+            ✨ Effect D · 活体知识核心版 →
+          </button>
+          <button
+            onClick={onEnterLandingE}
+            className="text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+          >
+            ✨ Effect E · 粒子宇宙+双门户版 →
           </button>
         </div>
       </div>
