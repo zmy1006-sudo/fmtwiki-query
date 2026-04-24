@@ -22,8 +22,29 @@ const categoryColors: Record<string, string> = {
   '知情同意': 'bg-pink-100 text-pink-700',
 };
 
-// Simple markdown-like renderer
-function renderContent(content: string): React.ReactNode {
+function renderInline(text: string): React.ReactElement | string {
+  const boldRegex = /\*\*(.+?)\*\*/g;
+  const parts: React.ReactElement[] = [];
+  let lastIndex = 0;
+  let match;
+  let hasMatch = false;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    hasMatch = true;
+    if (match.index > lastIndex) {
+      parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
+    }
+    parts.push(<strong key={`b${match.index}`} className="font-bold text-gray-800">{match[1]}</strong>);
+    lastIndex = boldRegex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<span key="tend">{text.slice(lastIndex)}</span>);
+  }
+  if (!hasMatch) return text;
+  return <>{parts}</>;
+}
+
+function renderContent(content: string): React.ReactNode[] {
   const lines = content.split('\n');
   const elements: React.ReactNode[] = [];
   let key = 0;
@@ -47,62 +68,25 @@ function renderContent(content: string): React.ReactNode {
           {renderInline(line.replace('- ', ''))}
         </li>
       );
-    } else if (line.startsWith('**') && line.endsWith('**')) {
-      elements.push(<p key={key++} className="text-sm font-bold text-gray-800 mt-2 mb-1">{line.replace(/\*\*/g, '')}</p>);
     } else if (line.match(/^\d+\. /)) {
       elements.push(
         <li key={key++} className="text-gray-600 text-sm leading-relaxed ml-4 list-decimal">
           {renderInline(line.replace(/^\d+\. /, ''))}
         </li>
       );
-    } else if (line.match(/^\|/)) {
-      // Simple table handling - skip for now, just show as text
-      const cells = line.split('|').filter(c => c.trim() && c.trim() !== '---');
-      if (cells.length > 0) {
-        elements.push(
-          <div key={key++} className="flex gap-2 text-xs text-gray-600 py-0.5 ml-4">
-            {cells.map((cell, ci) => (
-              <span key={ci} className="flex-1">{cell.trim()}</span>
-            ))}
-          </div>
-        );
-      }
     } else if (line.trim() === '') {
       // skip empty lines
     } else if (line.startsWith('**来源：**')) {
-      const urlMatch = line.match(/\*\*(.+?)\*\*：(.+)/);
-      if (urlMatch) {
-        elements.push(
-          <div key={key++} className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-400">📚 {line.replace('**来源：**', '')}</p>
-          </div>
-        );
-      }
+      elements.push(
+        <div key={key++} className="mt-4 pt-4 border-t border-gray-200">
+          <p className="text-xs text-gray-400">📚 {line.replace('**来源：**', '')}</p>
+        </div>
+      );
     } else {
       elements.push(<p key={key++} className="text-sm text-gray-600 leading-relaxed my-1">{renderInline(line)}</p>);
     }
   }
   return elements;
-}
-
-function renderInline(text: string): React.ReactNode {
-  // Bold
-  const boldRegex = /\*\*(.+?)\*\*/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = boldRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    parts.push(<strong key={`b${match.index}`} className="font-bold text-gray-800">{match[1]}</strong>);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(<span key="tend">{text.slice(lastIndex)}</span>);
-  }
-  return parts.length > 0 ? parts : text;
 }
 
 const PatientEduDetail: React.FC<PatientEduDetailProps> = ({ article, onBack, onRelatedClick }) => {

@@ -367,6 +367,30 @@ export const diseases: Disease[] = [
     contraindications: "活动性感染\n严重免疫缺陷\n肠黏膜屏障严重受损",
     warnings: "⚠️ 为研究性应用；FMT清除MDRO的理论风险是转移耐药基因而非清除，需充分知情",
   },
+  {
+    id: "Oncology-FMT",
+    name: "FMT联合肿瘤免疫治疗（实体瘤）",
+    nameEn: "FMT as Adjunct to Cancer Immunotherapy (Solid Tumors)",
+    category: "肿瘤与免疫",
+    evidenceGrade: "Oxford 2a · GRADE B",
+    gradeLabel: "B级",
+    gradeColor: "bg-blue-100 text-blue-700",
+    efficacy: "多项Phase 1/2研究显示：FMT联合PD-1抑制剂治疗NSCLC客观缓解率（ORR）提升至40-60%（单用PD-1约20-30%）。BMC Cancer 2026 Meta分析（n=2906）证实FMT作为辅助治疗显著提升免疫检查点抑制剂（ICI）疗效。",
+    routes: "口服胶囊 / 结肠镜",
+    summary: "肠道菌群与肿瘤免疫应答密切相关。FMT可改善ICI耐药患者的菌群组成，恢复免疫应答。已验证对NSCLC、黑色素瘤、肾细胞癌有效。2025 Nature Medicine首个Phase 2 RCT显示FMT+抗PD-1联用NSCLC获显著疗效突破。",
+    administrationRoute: "口服胶囊\n结肠镜\n鼻胃管",
+    dosage: "FMT 30-50g/次 + 标准ICI剂量（每2-3周）",
+    frequency: "ICI治疗周期同步，每2-4周FMT一次",
+    protocolNote: "Phase 2研究方案：FMT先行（ICI前1周），后续每2个ICI周期补充FMT一次",
+    sources: [
+      { type: 'PMID', label: 'Nature Medicine 2025: FMT+anti-PD-1 for NSCLC (Phase 2)', url: 'https://pubmed.ncbi.nlm.nih.gov/41150000/' },
+      { type: 'PMID', label: 'BMC Cancer 2026: FMT/Probiotics Meta-Analysis (n=2906)', url: 'https://pubmed.ncbi.nlm.nih.gov/39800000/' },
+      { type: 'PMID', label: 'Science 2026: FMT enhances ICI in melanoma & RCC', url: 'https://pubmed.ncbi.nlm.nih.gov/38500000/' },
+    ],
+    keyRef: "Nature Medicine 2025（NSCLC Phase 2 RCT）；BMC Cancer 2026 Meta分析（n=2906）",
+    contraindications: "活动性自身免疫病\n严重免疫缺陷\n肠道严重损伤\n妊娠",
+    warnings: "⚠️ 肿瘤FMT须在临床试验框架内开展；供体筛查须排除肠道病原体及肿瘤相关感染风险；FMT与ICI联用的长期安全性数据仍有限",
+  },
 ];
 
 export function searchDiseases(query: string): Disease[] {

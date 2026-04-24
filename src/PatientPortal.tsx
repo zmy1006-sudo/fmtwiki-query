@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { patientEduArticles, type PatientEduArticle } from './data/patientEdu';
 import { search, type SearchRecord } from './data/searchIndex';
 import { callGLMStream, cleanMarkdown } from './lib/aiSearch';
@@ -6,7 +6,7 @@ import PatientEduDetail from './PatientEduDetail';
 import HospitalMapPanel from './HospitalMapPanel';
 import FloatingAIDrawer from './components/FloatingAIDrawer';
 import SearchResultsPanel from './SearchResultsPanel';
-import AISearchPage from './AISearchPage';
+
 
 type PatientEduCategory = '全部' | '前世今生' | '适应证' | '治疗流程' | '政策规范' | '医保报销' | '知情同意' | '日常管理' | '就诊指南' | '医院地图';
 
@@ -49,11 +49,13 @@ function ArticleCard({ article, onClick }: { article: PatientEduArticle; onClick
   );
 }
 
-export default function PatientPortal({ onLogout, onOpenAISearch }: { onLogout: () => void; onOpenAISearch: () => void }) {
+export default function PatientPortal({ onLogout, onOpenUserCenter }: { onLogout: () => void; onOpenUserCenter?: () => void }) {
   const [activeCategory, setActiveCategory] = useState<PatientEduCategory>('全部');
   const [selectedArticle, setSelectedArticle] = useState<PatientEduArticle | null>(null);
   const [searchActive, setSearchActive] = useState(false);
   const [showAISearch, setShowAISearch] = useState(false);
+  const [showFloatingAI, setShowFloatingAI] = useState(false);
+  const floatingAIBtnRef = useRef<HTMLButtonElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchRecord[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -130,6 +132,26 @@ export default function PatientPortal({ onLogout, onOpenAISearch }: { onLogout: 
     return patientEduArticles.filter(a => a.category === activeCategory);
   }, [activeCategory]);
 
+  // 单独触发AI搜索（AI按钮直接调用）
+  function triggerAISearch() {
+    const q = searchQuery.trim();
+    if (!q) return;
+    aiAbortRef.current?.();
+    setAiContent('');
+    setAiError(null);
+    setAiLoading(true);
+    let raw = '';
+    const onToken = (token: string, done: boolean) => {
+      raw += token;
+      setAiContent(cleanMarkdown(raw));
+      if (done) setAiLoading(false);
+    };
+    const onErr = (msg: string) => { setAiError(msg); setAiLoading(false); };
+    callGLMStream(q, 'patient', onToken, onErr)
+      .then(({ abort }) => { aiAbortRef.current = abort; })
+      .catch(() => { setAiLoading(false); });
+  }
+
   if (selectedArticle) {
     return <PatientEduDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} onRelatedClick={a => setSelectedArticle(a)} />;
   }
@@ -203,10 +225,16 @@ export default function PatientPortal({ onLogout, onOpenAISearch }: { onLogout: 
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition shadow-sm">
                 搜索
               </button>
+              {/* AI助手按钮 — 直接触发AI搜索 */}
+              <button onClick={() => { if (searchQuery.trim()) triggerAISearch(); }}
+                className="absolute right-[72px] top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                🤖 AI
+              </button>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* ── 搜索结果 + AI回答 ── */}
       {hasSearch && (
@@ -347,8 +375,21 @@ export default function PatientPortal({ onLogout, onOpenAISearch }: { onLogout: 
         </div>
       </div>
 
-      {/* 浮动AI助手 */}
-      <FloatingAIDrawer portal="patient" />
+      {/* 浮动AI助手（受控模式） */}
+      <FloatingAIDrawer portal="patient" open={showFloatingAI} onOpenChange={setShowFloatingAI} />
+
+      {/* 右下角浮动AI入口 */}
+      {!showFloatingAI && !showAISearch && (
+        <button
+          ref={floatingAIBtnRef}
+          onClick={() => setShowFloatingAI(true)}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center transition hover:scale-110"
+          style={{ boxShadow: '0 4px 20px rgba(16,185,129,0.4)' }}
+          aria-label="打开AI助手"
+        >
+          <span className="text-2xl">🤖</span>
+        </button>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
-// AI搜索服务 - DeepSeek v1 + 完整Markdown渲染器
+// AI搜索服务 - DeepSeek API
 // API文档：https://api.deepseek.com/
 
-const API_KEY = import.meta.env.VITE_GLM_API_KEY || '';
+const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || import.meta.env.VITE_GLM_API_KEY || '';
 const API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const FETCH_TIMEOUT_MS = 20_000;
 const MAX_RETRIES = 2;
@@ -11,9 +11,7 @@ export function isConfigured(): boolean {
 }
 
 // ─────────────────────────────────────────
-// HTML 实体解码（AI 输出保护，统一在入口处理）
-// AI 可能返回 HTML 原文（<tag>）或实体形式（&lt;tag&amp;gt;）
-// 统一在函数入口 decode 一次，防止双重转义
+// HTML 实体解码
 // ─────────────────────────────────────────
 function decodeHtmlEntities(text: string): string {
   return text
@@ -27,8 +25,7 @@ function decodeHtmlEntities(text: string): string {
 }
 
 // ─────────────────────────────────────────
-// HTML 标签剥离（AI 混合输出保护）
-// 保留 <br> → 换行符；剥离其余标签，提取标签内文字
+// HTML 标签剥离
 // ─────────────────────────────────────────
 function stripHtmlTags(html: string): string {
   html = html.replace(/<!--[\s\S]*?-->/g, '');
@@ -40,103 +37,129 @@ function stripHtmlTags(html: string): string {
 }
 
 // ─────────────────────────────────────────
-// Markdown → HTML（医生端）
-// 顺序：decode entity → strip HTML → process markdown
-// 支持：h1-h4、加粗、斜体、列表、引用、代码块
+// Markdown → HTML（医生端 v3 — 医疗报告排版引擎）
 // ─────────────────────────────────────────
 export function renderMarkdown(text: string): string {
   if (!text) return '';
 
-  // 【关键修复】先 decode HTML entity，再 strip HTML，最后处理 markdown
   let html = decodeHtmlEntities(text);
   html = stripHtmlTags(html);
 
-  // 1. 先处理代码块（保护内容不做其他转换）
+  // ── 0. 预处理：中文句号/分号后面补换行，防止列表项全挤在一起 ──
+  html = html.replace(/([。；])/g, "$1\n");
+
+  // ── 1. 代码块保护 ──
   const codeBlocks: string[] = [];
   html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_m, code) => {
-    const placeholder = `§CODEBLOCK${codeBlocks.length}§`;
-    codeBlocks.push(`<pre class="bg-gray-900 text-gray-100 rounded-xl px-4 py-3 text-xs font-mono my-3 overflow-x-auto leading-relaxed"><code>${code}</code></pre>`);
-    return placeholder;
+    const idx = codeBlocks.length;
+    codeBlocks.push(
+      `<div class="my-4"><pre class="bg-gray-900 text-gray-100 rounded-xl px-4 py-3 text-xs font-mono overflow-x-auto leading-relaxed"><code>${code.trim()}</code></pre></div>`
+    );
+    return `§CODEBLOCK${idx}§`;
   });
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600">$1</code>');
+  html = html.replace(/`([^`]+)`/g,
+    '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600">$1</code>');
 
-  // 2. 标题（行首检测）
-  html = html.replace(/^#### (.+)$/gm, '<h4 class="text-sm font-bold text-gray-800 mt-4 mb-2">$1</h4>');
-  html = html.replace(/^### (.+)$/gm, '<h3 class="text-base font-bold text-gray-800 mt-5 mb-2">$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-gray-900 mt-5 mb-3 border-b border-gray-100 pb-2">$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-gray-900 mt-5 mb-3">$1</h1>');
+  // ── 2. 标题层级 ──
+  // H1: 大标题（深墨色，底部加线）
+  html = html.replace(/^# ([^\n]+)$/gm,
+    '<h1 class="text-xl font-black text-gray-900 mt-6 mb-3 pb-2 border-b-2 border-emerald-400">$1</h1>');
+  // H2: 章节标题（翡翠绿，主色调）
+  html = html.replace(/^## ([^\n]+)$/gm,
+    '<h2 class="text-lg font-bold text-emerald-700 mt-6 mb-3 flex items-center gap-2"><span class="w-1 h-5 bg-emerald-400 rounded-full inline-block"></span>$1</h2>');
+  // H3: 小节标题（蓝紫色，上边线）
+  html = html.replace(/^### ([^\n]+)$/gm,
+    '<h3 class="text-sm font-bold text-blue-700 mt-5 mb-2.5 pl-3 border-l-3 border-blue-400 bg-blue-50/50 rounded-r py-1">$1</h3>');
+  // H4: 重点标签（深灰，左边框强调）
+  html = html.replace(/^#### ([^\n]+)$/gm,
+    '<h4 class="text-xs font-bold text-gray-600 mt-4 mb-1.5 uppercase tracking-wider text-emerald-600">$1</h4>');
 
-  // 3. 加粗（处理多行）
+  // ── 3. 加粗 ──
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
   html = html.replace(/__(.+?)__/g, '<strong class="font-bold text-gray-900">$1</strong>');
-
-  // 4. 斜体
-  html = html.replace(/\*(.+?)\*/g, '<em class="italic text-gray-600">$1</em>');
-  html = html.replace(/_(.+?)_/g, '<em class="italic text-gray-600">$1</em>');
-
-  // 5. 删除线
+  // 加粗后冒号自动加空格（**内容：** → **内容**： ）
+  html = html.replace(
+    /<strong([^>]*)>([^<]*)[\uff1a:]([^<]*)<\/strong>(\s*[\uff1a:])/g,
+    '<strong$1>$2$3</strong>$4 '
+  );
+  // 斜体
+  html = html.replace(/\*(.+?)\*/g, '<em class="italic text-gray-500">$1</em>');
+  html = html.replace(/_(.+?)_/g, '<em class="italic text-gray-500">$1</em>');
+  // 删除线
   html = html.replace(/~~(.+?)~~/g, '<del class="text-gray-400 line-through">$1</del>');
 
-  // 6. 引用
-  html = html.replace(/^&gt; (.+)$/gm,
-    '<blockquote class="border-l-4 border-indigo-400 pl-3 py-2 my-2 text-sm text-indigo-700 bg-indigo-50 rounded-r-lg">$1</blockquote>');
+  // ── 4. 引用 ──
+  html = html.replace(/^>\s?([^\n]+)$/gm,
+    '<blockquote class="border-l-4 border-emerald-400 bg-emerald-50 pl-3.5 py-2 my-3 rounded-r-lg text-sm text-emerald-800 leading-7 flex gap-2"><span class="text-lg mt-[-2px]">📌</span><span>$1</span></blockquote>');
 
-  // 7. 无序列表（合并连续项）
+  // ── 5. 分割线 ──
+  html = html.replace(/^---$/gm, '<div class="my-5 border-t border-gray-200"></div>');
+  html = html.replace(/^\*\*\*$/gm, '<div class="my-5 border-t border-gray-200"></div>');
+
+  // ── 6. 无序列表（连续合并，深缩进+翡翠边框） ──
   const lines = html.split('\n');
-  const result: string[] = [];
+  const out1: string[] = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    if (/^[-*•] /.test(line)) {
+    if (/^[-*•·]\s/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^[-*•] /.test(lines[i])) {
-        items.push(`<li class="ml-6 text-gray-700 text-sm leading-7 list-disc marker:text-blue-500">${lines[i].replace(/^[-*•] /, '')}</li>`);
+      while (i < lines.length && /^[-*•·]\s/.test(lines[i])) {
+        const content = lines[i].replace(/^[-*•·]\s/, '').trim();
+        items.push(`<li class="py-1 text-sm text-gray-700 leading-7 break-words overflow-wrap-break-word">${content}</li>`);
         i++;
       }
-      result.push(`<ul class="space-y-1 my-3">${items.join('')}</ul>`);
+      out1.push(
+        `<ul class="ml-3 my-3 space-y-0.5 border-l-2 border-emerald-300 pl-3 bg-emerald-50/50 rounded-r-lg py-1">${items.join('')}</ul>`
+      );
     } else {
-      result.push(line);
+      out1.push(line);
       i++;
     }
   }
-  html = result.join('\n');
 
-  // 8. 有序列表
-  const result2: string[] = [];
-  let j = 0;
-  while (j < result.length) {
-    const line = result[j];
-    if (/^\d+\. /.test(line)) {
+  // ── 7. 有序列表（连续合并，蓝色边框，序号正确） ──
+  const out2: string[] = [];
+  let k = 0;
+  let seqNum = 1;
+  while (k < out1.length) {
+    const line = out1[k];
+    if (/^\d+\.\s/.test(line)) {
       const items: string[] = [];
-      while (j < result.length && /^\d+\. /.test(result[j])) {
-        items.push(`<li class="ml-6 text-gray-700 text-sm leading-7 list-decimal">${result[j].replace(/^\d+\. /, '')}</li>`);
-        j++;
+      const startN = seqNum;
+      while (k < out1.length && /^\d+\.\s/.test(out1[k])) {
+        items.push(`<li class="py-1 text-sm text-gray-700 leading-7">${out1[k].replace(/^\d+\.\s/, '')}</li>`);
+        k++; seqNum++;
       }
-      result2.push(`<ol class="list-decimal list-inside space-y-1 my-3">${items.join('')}</ol>`);
+      out2.push(
+        `<ol start="${startN}" class="ml-3 my-3 space-y-0.5 border-l-2 border-blue-300 pl-3 bg-blue-50/50 rounded-r-lg py-1 list-decimal list-inside">${items.join('')}</ol>`
+      );
     } else {
-      result2.push(line);
-      j++;
+      out2.push(line);
+      k++;
     }
   }
-  html = result2.join('\n');
+  html = out2.join('\n');
 
-  // 9. 段落（双换行分割）
+  // ── 8. 段落（双换行分割） ──
   const blocks = html.split(/\n{2,}/);
   html = blocks.map(block => {
     block = block.trim();
     if (!block) return '';
-    if (block.startsWith('<h') || block.startsWith('<ul') ||
-        block.startsWith('<ol') || block.startsWith('<blockquote') ||
-        block.startsWith('<pre')) return block;
-    const safe = block.replace(/\n/g, '<br/>');
-    return `<p class="text-sm text-gray-700 leading-7 my-2">${safe}</p>`;
+    if (
+      block.startsWith('<h1') || block.startsWith('<h2') || block.startsWith('<h3') ||
+      block.startsWith('<h4') || block.startsWith('<ul') ||
+      block.startsWith('<ol') || block.startsWith('<blockquote') ||
+      block.startsWith('<pre') || block.startsWith('<div class="my-5')
+    ) return block;
+    // 孤立 <li> 包裹
+    if (/^<li>/.test(block) && !/<ul|<ol/.test(block)) {
+      return `<ul class="ml-3 my-2 space-y-0.5 border-l-2 border-emerald-200 pl-3 rounded-r-lg">${block}</ul>`;
+    }
+    return `<p class="text-sm text-gray-700 leading-8 my-2">${block.replace(/\n/g, '<br/>')}</p>`;
   }).join('\n');
 
-  // 10. 仅对裸露的 < 和 > 做安全转义（不在已生成的HTML标签内）
-  // 不动 & 避免误伤 decode 后的合法 & 字符
-  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  // 11. 恢复代码块
+  // ── 9. 恢复代码块 ──
   codeBlocks.forEach((block, idx) => {
     html = html.replace(`§CODEBLOCK${idx}§`, block);
   });
@@ -146,40 +169,24 @@ export function renderMarkdown(text: string): string {
 
 // ─────────────────────────────────────────
 // 患者端 Markdown 渲染（轻量格式，温和样式）
-// 支持：标题/加粗/斜体/列表/引用；自动剥离 HTML 标签防止乱码
 // ─────────────────────────────────────────
 export function cleanMarkdown(text: string): string {
   if (!text) return '';
-  // 【关键修复】先 decode HTML entity，再 strip HTML，最后处理 markdown
   let t = decodeHtmlEntities(text);
-  t = t
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<\/?[a-z][a-z0-9]*\b[^>]*>/gi, (m) => /^<br\s*\/?>$/i.test(m) ? '\n' : '')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
-
-  // 标题 → 加粗前缀（患者友好符号）
+  t = stripHtmlTags(t);
   t = t.replace(/^### (.+)$/gm, '◆ $1');
   t = t.replace(/^## (.+)$/gm, '▍ $1');
   t = t.replace(/^# (.+)$/gm, '◈ $1');
-  // 加粗 → 【】
   t = t.replace(/\*\*(.+?)\*\*/g, '【$1】');
   t = t.replace(/__(.+?)__/g, '【$1】');
-  // 斜体 → ""
   t = t.replace(/\*(.+?)\*/g, '"$1"');
   t = t.replace(/_(.+?)_/g, '"$1"');
-  // 删除线
   t = t.replace(/~~(.+?)~~/g, '̶$1̶');
-  // 引用
-  t = t.replace(/^&gt; (.+)$/gm, '▎ $1');
-  t = t.replace(/^> (.+)$/gm, '▎ $1');
-  // 列表
+  t = t.replace(/^>\s?(.+)$/gm, '▎ $1');
   t = t.replace(/^[-*•] (.+)$/gm, '  • $1');
   t = t.replace(/^\d+\. (.+)$/gm, '    $1');
-  // 代码块/行内代码
-  t = t.replace(/```[\w]*\n?[\s\S]*?```/g, '[代码段]');
+  t = t.replace(/```[\s\S]*?```/g, '[代码段]');
   t = t.replace(/`([^`]+)`/g, '"$1"');
-
   return t.replace(/\n{3,}/g, '\n\n').trim();
 }
 
@@ -190,7 +197,7 @@ export interface AIResult { content: string; error?: string; }
 export type TokenCallback = (token: string, done: boolean) => void;
 
 const FALLBACK_CONTENT = (query: string) =>
-  `抱歉，当前 AI 服务暂时不可用。\n\n关于「${query}」的一般性参考：\n\n粪菌移植（FMT）目前已被认可的适应证包括：\n  • 复发性艰难梭菌感染（rCDI）— 循证等级 A，金标准治疗\n  • 炎症性肠病（IBD）— 溃疡性结肠炎、克罗恩病\n  • 肠易激综合征（IBS）\n  • 自闭症谱系障碍（ASD）\n\n如症状持续，请到正规医院消化科就诊。\n\n⚠️ 本回答仅供参考，不能替代临床判断，请遵医嘱。`;
+  `抱歉，当前 AI 服务暂时不可用。\n\n关于「${query}」的一般性参考：\n\n粪菌移植（FMT）目前已被认可的适应证包括：\n• 复发性艰难梭菌感染（rCDI）— 循证等级 A，金标准治疗\n• 炎症性肠病（IBD）— 溃疡性结肠炎、克罗恩病\n• 肠易激综合征（IBS）\n• 自闭症谱系障碍（ASD）\n\n如症状持续，请到正规医院消化科就诊。\n\n⚠️ 本回答仅供参考，不能替代临床判断，请遵医嘱。`;
 
 // ─────────────────────────────────────────
 // SSE 流式调用

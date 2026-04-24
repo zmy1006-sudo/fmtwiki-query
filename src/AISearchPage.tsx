@@ -406,9 +406,9 @@ export default function AISearchPage({ portal, onBack }: Props) {
                         [&>h4]:text-sm [&>h4]:font-bold [&>h4]:text-gray-800 [&>h4]:mt-3 [&>h4]:mb-1.5
                         [&>p]:text-sm [&>p]:text-gray-700 [&>p]:leading-8 [&>p]:my-3
                         [&>ul]:space-y-1.5 [&>ul]:my-3 [&>ul]:list-disc [&>ul]:list-inside
-                        [&>ul>li]:text-sm [&>ul>li]:text-gray-700 [&>ul>li]:leading-7 [&>ul>li]:marker:text-blue-400
+                        [&>ul>li]:text-sm [&>ul>li]:text-gray-700 [&>ul>li]:leading-7 [&>ul>li]:marker:text-blue-400 [&>ul>li]:break-words [&>ul>li]:overflow-wrap-break-word [&>ul>li]:min-w-0
                         [&>ol]:space-y-1.5 [&>ol]:my-3 [&>ol]:list-decimal [&>ol]:list-inside
-                        [&>ol>li]:text-sm [&>ol>li]:text-gray-700 [&>ol>li]:leading-7
+                        [&>ol>li]:text-sm [&>ol>li]:text-gray-700 [&>ol>li]:leading-7 [&>ol>li]:break-words [&>ol>li]:overflow-wrap-break-word [&>ol>li]:min-w-0
                         [&>blockquote]:border-l-4 [&>blockquote]:border-indigo-400 [&>blockquote]:bg-indigo-50 [&>blockquote]:pl-4 [&>blockquote]:py-3 [&>blockquote]:my-3 [&>blockquote]:rounded-r-xl [&>blockquote]:text-sm [&>blockquote]:text-indigo-700
                         [&>pre]:bg-gray-900 [&>pre]:text-gray-100 [&>pre]:rounded-xl [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:font-mono [&>pre]:overflow-x-auto [&>pre]:my-3 [&>pre]:leading-relaxed
                         [&>code]:bg-gray-100 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono [&>code]:text-pink-600

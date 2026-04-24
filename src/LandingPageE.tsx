@@ -100,7 +100,7 @@ function CounterCard({ value, label, suffix = '', color = 'blue' }: {
   const map: Record<string, string> = {
     blue: 'from-blue-400 to-cyan-400', purple: 'from-purple-400 to-pink-400',
     green: 'from-emerald-400 to-teal-400', amber: 'from-amber-400 to-orange-400',
-    rose: 'from-rose-400 to-red-400',
+    rose: 'from-rose-400 to-red-400', cyan: 'from-cyan-400 to-blue-400',
   };
 
   return (
@@ -332,22 +332,29 @@ export default function LandingPageE({ onEnterDoctor, onEnterPatient }: Props) {
           </span>
           <br />
           <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-            循证知识库
+            循证医学平台
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-gray-400 text-base mb-10 max-w-xl leading-relaxed animate-slide-up" style={{ animationDelay: '200ms', opacity: 0 }}>
-          面向临床医生、医学生和研究人员的 FMT 垂直领域知识平台<br />
-          双端驱动 · Oxford × GRADE 双标签循证分级 · 来源 100% 可溯源
+        <p className="text-gray-400 text-base mb-4 max-w-xl leading-relaxed animate-slide-up" style={{ animationDelay: '200ms', opacity: 0 }}>
+          面向临床医生的 FMT 垂直领域知识平台<br />
+          循证优先 · 来源100%可溯源 · 整合 FMTWiki 知识库与 DeepFMT 诊疗系统
+        </p>
+
+        {/* Philosophy Quote */}
+        <p className="text-blue-300/60 text-xs italic mb-10 max-w-lg animate-slide-up" style={{ animationDelay: '260ms', opacity: 0 }}>
+          以菌为药，重建微生态平衡；循证为基，守护肠道健康。<br />
+          FMT 不仅是技术的革新，更是医学回归自然的哲学实践。
         </p>
 
         {/* Counters */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-14 w-full max-w-3xl animate-slide-up" style={{ animationDelay: '280ms', opacity: 0 }}>
-          <CounterCard value={14} label="适应证" color="blue" />
-          <CounterCard value={21} label="研究团队" color="purple" />
-          <CounterCard value={19} label="AI应用" color="green" />
-          <CounterCard value={35} label="患者科普" color="amber" />
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mb-14 w-full max-w-3xl animate-slide-up" style={{ animationDelay: '280ms', opacity: 0 }}>
+          <CounterCard value={15} label="适应证" color="blue" />
+          <CounterCard value={22} label="研究团队" color="purple" />
+          <CounterCard value={10} label="AI应用" color="green" />
+          <CounterCard value={98} label="核心文献" color="cyan" />
+          <CounterCard value={37} label="患者科普" color="amber" />
           <CounterCard value={100} label="可溯源率%" suffix="%" color="rose" />
         </div>
 
@@ -480,37 +487,6 @@ export default function LandingPageE({ onEnterDoctor, onEnterPatient }: Props) {
               btnStyle="bg-white/10 border border-white/20 hover:bg-white/20 text-white"
               delay={150} onEnter={onEnterPatient}
             />
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════
-          DATA STATUS DASHBOARD
-      ═══════════════════════════════════════════ */}
-      <div className="relative z-10 px-4 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-white mb-1">运行状态</h2>
-            <p className="text-gray-500 text-xs">数据持续同步 · 每3天自动更新</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { label: '最近同步', time: '2026-04-13 09:30', sub: '团队最新动态已更新', color: 'bg-emerald-500', w: 100, dot: 'bg-emerald-400' },
-              { label: '下次同步', time: '2026-04-16 09:30', sub: '距更新约 48h', color: 'bg-blue-500', w: 35, dot: 'bg-blue-400' },
-              { label: '质量审查', time: 'M-DQA Active', sub: 'Generator+Evaluator 双代理运行中', color: 'bg-violet-500', w: 80, dot: 'bg-violet-400' },
-            ].map(card => (
-              <div key={card.label} className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-gray-400 font-mono">{card.label}</span>
-                  <span className={`w-2 h-2 rounded-full ${card.dot} animate-pulse`} />
-                </div>
-                <div className="text-xl font-black text-white mb-1">{card.time}</div>
-                <div className="text-xs text-gray-500 mb-3">{card.sub}</div>
-                <div className="bg-white/5 rounded-full h-1.5 overflow-hidden">
-                  <div className={`h-full ${card.color} rounded-full`} style={{ width: `${card.w}%` }} />
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { diseases, searchDiseases, type Disease } from './data/diseases';
 import { teams, teamCategories, filterTeams, type Team } from './data/teams';
 import { aiApps, appTypes, filterAIApps, type AIApp, type AppType, maturityColors, typeColors } from './data/aiApps';
@@ -6,10 +6,15 @@ import { sciencePapers, type SciencePaper } from './data/science';
 import { literature } from './data/literature';
 import { decisionTree, getNodeById, verdictStyleMap, verdictColors, type DecisionNode, type FMTDecision } from './data/decisionTree';
 import { EvidenceGuide } from './EvidenceGuide';
+import { usePointsStore } from './store/pointsStore';
+import { LEVEL_CONFIG } from './data/pointsStore';
+import { search, type SearchRecord } from './data/searchIndex';
+import { callGLMStream, cleanMarkdown } from './lib/aiSearch';
+import AISearchPage from './AISearchPage';
 
 interface DoctorPortalProps {
   onLogout: () => void;
-  onOpenAISearch: () => void;
+  onOpenUserCenter: () => void;
 }
 
 type DoctorTab = 'disease' | 'teams' | 'ai' | 'scienceLit';
@@ -727,6 +732,9 @@ function ScienceLitTab({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1.5">
             {badge}
+            {item.studyType && (
+              <span className="px-1.5 py-0.5 bg-purple-50 border border-purple-200 rounded text-xs text-purple-600 font-bold">{item.studyType}</span>
+            )}
             <span className="text-xs text-gray-400">{item.year}</span>
             {item.evidenceGrade && (
               <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
@@ -742,8 +750,11 @@ function ScienceLitTab({
           <p className="text-xs text-gray-500 mt-1 truncate">
             {Array.isArray(item.authors) ? item.authors.slice(0, 3).join(', ') + (item.authors.length > 3 ? ` +${item.authors.length - 3}` : '') : ''}
           </p>
-          {item.disease && (
-            <span className="inline-block mt-1.5 px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs text-gray-500">{item.disease}</span>
+          {(item.targetIndication || item.disease) && (
+            <span className="inline-block mt-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded text-xs text-indigo-600">{item.targetIndication || item.disease}</span>
+          )}
+          {item.significance && (
+            <p className="text-xs text-amber-600 mt-1 line-clamp-1 font-medium">📌 {item.significance}</p>
           )}
         </div>
         <svg className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -943,73 +954,242 @@ function LiteratureDetail({ entry, onBack }: { entry: any; onBack: () => void })
     if (g.includes('2')) return 'bg-blue-50 text-blue-700 border border-blue-200';
     return 'bg-amber-50 text-amber-700 border border-amber-200';
   };
+
+  const entryAny = entry as any;
+  const pmid = entryAny.pmid;
+  const doi = entryAny.doi;
+  const title = entryAny.title || '';
+  const authors = entryAny.authors || '';
+  const journal = entryAny.journal || '';
+  const year = entryAny.year;
+  const studyType = entryAny.studyType || '';
+  const evidenceGrade = entryAny.evidenceGrade || '';
+  const targetIndication = entryAny.targetIndication || entryAny.disease || '';
+  const population = entryAny.population || '';
+  const n = entryAny.n;
+  const intervention = entryAny.intervention || '';
+  const control = entryAny.control || '';
+  const outcomes = entryAny.outcomes;
+  const keyFindings = entryAny.keyFindings || [];
+  const sources = entryAny.sources || [];
+  const abstract = entryAny.abstract || '';
+  const keywords = entryAny.keywords || [];
+  const significance = entryAny.significance || '';
+  const notes = entryAny.notes || '';
+
+  // Authors display
+  const authorsDisplay = Array.isArray(authors) ? authors.join(' · ') : authors;
+
+  // Outcomes display
+  const primaryOutcome = outcomes?.primary || '';
+  const secondaryOutcome = outcomes?.secondary || '';
+  const outcomesText = outcomes && typeof outcomes === 'object'
+    ? (primaryOutcome ? `主要结局：${primaryOutcome}` : '') +
+      (secondaryOutcome ? `\n次要结局：${secondaryOutcome}` : '')
+    : (typeof outcomes === 'string' ? outcomes : '');
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Sticky header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition"><BackIcon /></button>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-bold">核心文献</span>
-              {(entry as any).evidenceGrade && (
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${gradeColor((entry as any).evidenceGrade)}`}>{(entry as any).evidenceGrade}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {studyType && (
+                <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-bold">{studyType}</span>
+              )}
+              {evidenceGrade && (
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${gradeColor(evidenceGrade)}`}>{evidenceGrade}</span>
+              )}
+              {targetIndication && (
+                <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded text-xs font-medium">{targetIndication}</span>
               )}
             </div>
           </div>
-          {(entry as any).pmid && (
-            <a href={`https://pubmed.ncbi.nlm.nih.gov/${(entry as any).pmid}/`} target="_blank" rel="noopener noreferrer"
-              className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 hover:bg-blue-100 transition flex items-center gap-1">
-              PubMed <ExternalIcon />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {pmid && (
+              <a href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`} target="_blank" rel="noopener noreferrer"
+                className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 hover:bg-blue-100 transition flex items-center gap-1">
+                PMID {pmid} <ExternalIcon />
+              </a>
+            )}
+          </div>
+        </div>
+        {doi && (
+          <div className="max-w-4xl mx-auto px-4 pb-2">
+            <a href={`https://doi.org/${doi}`} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-blue-500 hover:text-blue-700 font-mono flex items-center gap-1">
+              DOI: {doi} <ExternalIcon />
             </a>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
+
+        {/* ── Title & Meta ── */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-bold text-purple-700 mb-2 uppercase tracking-wide">论文标题</p>
-          <h1 className="text-base font-bold text-gray-900 leading-snug">{(entry as any).title}</h1>
-          <p className="text-sm text-gray-600 mt-3">{Array.isArray((entry as any).authors) ? (entry as any).authors.join(' · ') : (entry as any).authors}</p>
-          <div className="flex flex-wrap items-center gap-3 mt-3">
-            {(entry as any).journal && <span className="text-xs text-gray-500">{(entry as any).journal}</span>}
-            {(entry as any).year && <span className="text-xs text-gray-400">({(entry as any).year})</span>}
-            {(entry as any).pmid && <span className="text-xs text-gray-400">PMID: {(entry as any).pmid}</span>}
+          <h1 className="text-base font-bold text-gray-900 leading-snug">{title}</h1>
+          <p className="text-sm text-gray-600 mt-2">{authorsDisplay}</p>
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            {journal && <span className="text-xs text-gray-500 font-medium">{journal}</span>}
+            {year && <span className="text-xs text-gray-400">{year}</span>}
+            {n > 0 && <span className="text-xs text-gray-400">n={n}</span>}
           </div>
         </div>
-        {(entry as any).evidenceGrade && (
-          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-            <p className="text-xs font-bold text-purple-700 mb-1.5 uppercase">Oxford 证据等级</p>
-            <p className="text-sm font-semibold text-gray-900">{(entry as any).evidenceGrade}</p>
+
+        {/* ── Study Design Bar ── */}
+        <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-purple-800">
+            {studyType && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold">📋</span>
+                <span className="font-semibold">研究设计：{studyType}</span>
+              </div>
+            )}
+            {n > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold">👥</span>
+                <span>n={n}</span>
+              </div>
+            )}
+            {population && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold">🎯</span>
+                <span className="truncate max-w-xs">{population.length > 60 ? population.slice(0, 60) + '…' : population}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Intervention & Control ── */}
+        {(intervention || control) && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">干预与对照</p>
+            {intervention && (
+              <div className="flex gap-2">
+                <span className="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded font-bold flex-shrink-0">💊干预</span>
+                <p className="text-sm text-gray-700">{intervention}</p>
+              </div>
+            )}
+            {control && (
+              <div className="flex gap-2">
+                <span className="text-xs bg-gray-50 border border-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold flex-shrink-0">📊对照</span>
+                <p className="text-sm text-gray-700">{control}</p>
+              </div>
+            )}
           </div>
         )}
-        {(entry as any).disease && (
+
+        {/* ── Outcomes ── */}
+        {outcomesText && (
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-bold text-gray-500 mb-1.5">适应证 / 研究领域</p>
-            <span className="px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full text-sm text-indigo-700 font-medium">{(entry as any).disease}</span>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">结局指标</p>
+            <div className="space-y-2">
+              {primaryOutcome && (
+                <div className="flex gap-2">
+                  <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded font-bold flex-shrink-0">🔬主要</span>
+                  <p className="text-sm text-gray-700 leading-relaxed">{primaryOutcome}</p>
+                </div>
+              )}
+              {secondaryOutcome && (
+                <div className="flex gap-2">
+                  <span className="text-xs bg-gray-50 border border-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold flex-shrink-0">🔬次要</span>
+                  <p className="text-sm text-gray-700 leading-relaxed">{secondaryOutcome}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
-        {((entry as any).population || (entry as any).intervention || (entry as any).outcomes) && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <p className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">研究详情</p>
-            {(entry as any).population && <div><p className="text-xs font-semibold text-gray-700 mb-1">研究人群</p><p className="text-sm text-gray-600">{(entry as any).population}</p></div>}
-            {(entry as any).intervention && <div><p className="text-xs font-semibold text-gray-700 mb-1">干预措施</p><p className="text-sm text-gray-600">{(entry as any).intervention}</p></div>}
-            {(entry as any).outcomes && <div><p className="text-xs font-semibold text-gray-700 mb-1">主要结论</p><p className="text-sm text-gray-600">{(entry as any).outcomes}</p></div>}
+
+        {/* ── Significance (NEW) ── */}
+        {significance && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <div className="flex items-start gap-2">
+              <span className="text-base mt-0.5">📌</span>
+              <div>
+                <p className="text-xs font-bold text-amber-700 uppercase mb-1">参考意义</p>
+                <p className="text-sm text-amber-900 leading-relaxed font-medium">{significance}</p>
+              </div>
+            </div>
           </div>
         )}
-        {(entry as any).doi && (
+
+        {/* ── Keywords (NEW) ── */}
+        {keywords.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-bold text-gray-500 mb-1.5">DOI</p>
-            <a href={`https://doi.org/${(entry as any).doi}`} target="_blank" rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 break-all">{(entry as any).doi}</a>
+            <div className="flex items-start gap-2">
+              <span className="text-base mt-0.5">🔑</span>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-2">关键词</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {keywords.map((kw: string, i: number) => (
+                    <span key={i} className="px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-full text-xs text-gray-600">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
+
+        {/* ── Abstract (NEW) ── */}
+        {abstract && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">摘要 Abstract</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{abstract}</p>
+          </div>
+        )}
+
+        {/* ── Key Findings ── */}
+        {keyFindings.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-3">关键发现</p>
+            <div className="space-y-2">
+              {keyFindings.map((f: string, i: number) => (
+                <div key={i} className="flex gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">✅</span>
+                  <p className="text-sm text-gray-700 leading-relaxed">{f}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Notes ── */}
+        {notes && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-400 uppercase mb-1">备注</p>
+            <p className="text-xs text-gray-600 leading-relaxed">{notes}</p>
+          </div>
+        )}
+
+        {/* ── Sources ── */}
+        {sources.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">来源</p>
+            <div className="space-y-2">
+              {sources.map((s: any, i: number) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">{s.type}</span>
+                  <span className="text-xs text-blue-600 font-mono truncate flex-1">{s.label}</span>
+                  <ExternalIcon />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom spacer */}
+        <div className="h-8" />
       </div>
     </div>
   );
 }
 
 // ── Disease Tab ──────────────────────────────────────────
-function DiseaseTab({ onSelect }: { onSelect: (d: Disease) => void }) {
-  const [query, setQuery] = useState('');
+function DiseaseTab({ onSelect, query = '' }: { onSelect: (d: Disease) => void; query?: string }) {
   const [activeCategory, setActiveCategory] = useState('全部');
   const categories = ["全部","感染性疾病","炎症性肠病","功能性胃肠病","神经系统疾病","肝脏疾病","神经发育障碍","代谢性疾病","感染防控"];
   const filtered = useMemo(() => {
@@ -1021,12 +1201,7 @@ function DiseaseTab({ onSelect }: { onSelect: (d: Disease) => void }) {
     <div>
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-3">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon /></span>
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="搜索疾病、关键词..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 mt-2">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {categories.map(cat => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${activeCategory === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
@@ -1171,11 +1346,83 @@ function AIAppsTab({ onSelect }: { onSelect: (a: AIApp) => void }) {
 }
 
 // ── Doctor Portal ────────────────────────────────────────
-export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalProps) {
+export default function DoctorPortal({ onLogout, onOpenUserCenter }: Omit<DoctorPortalProps, 'onOpenAISearch'>) {
   const [view, setView] = useState<DoctorView>({ kind: 'list', tab: 'disease' });
   const [showDecisionTree, setShowDecisionTree] = useState(false);
   const [showEvidenceGuide, setShowEvidenceGuide] = useState(false);
+
+  // ── 搜索状态 ──────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+  const [kbResults, setKbResults] = useState<SearchRecord[] | null>(null);
+  const [kbLoading, setKbLoading] = useState(false);
+  const [showAISearch, setShowAISearch] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiContent, setAiContent] = useState('');
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'idle' | 'kb' | 'ai'>('idle');
+  const aiAbortRef = useRef<(() => void) | null>(null);
+
   const activeTab = view.kind === 'list' ? view.tab : null;
+  const currentUser = usePointsStore(s => s.currentUser);
+
+  // 知识库检索
+  const handleKBSearch = useCallback(() => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchMode('kb');
+    setKbLoading(true);
+    setAiContent('');
+    setAiError(null);
+    aiAbortRef.current?.();
+
+    try {
+      const results = search(q, 'doctor');
+      setKbResults(results);
+      setKbLoading(false);
+      // 无结果 → 自动触发AI搜索
+      if (results.length === 0) {
+        handleAISearch(q);
+      }
+    } catch {
+      setKbResults([]);
+      setKbLoading(false);
+    }
+  }, [searchQuery]);
+
+  // AI智能搜索（四阶段）
+  const handleAISearch = useCallback((q?: string) => {
+    const query = (q ?? searchQuery).trim();
+    if (!query) return;
+    setSearchMode('ai');
+    setAiLoading(true);
+    setAiContent('');
+    setAiError(null);
+    setKbResults(null);
+    aiAbortRef.current?.();
+
+    let rawContent = '';
+    const onToken = (token: string, done: boolean) => {
+      rawContent += token;
+      setAiContent(cleanMarkdown(rawContent));
+      if (done) setAiLoading(false);
+    };
+    const onError = (msg: string) => {
+      setAiError(msg);
+      setAiLoading(false);
+    };
+    callGLMStream(query, 'doctor', onToken, onError)
+      .then(({ abort }) => { aiAbortRef.current = abort; })
+      .catch(() => { setAiLoading(false); });
+  }, [searchQuery]);
+
+  const clearDoctorSearch = () => {
+    setSearchQuery('');
+    setKbResults(null);
+    setAiContent('');
+    setAiError(null);
+    setSearchMode('idle');
+    aiAbortRef.current?.();
+  };
 
   const tabConfig = [
     { id: 'disease' as DoctorTab, label: '💊 适应证', count: diseases.length },
@@ -1183,6 +1430,25 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
     { id: 'ai' as DoctorTab, label: '🤖 AI应用', count: aiApps.length },
     { id: 'scienceLit' as DoctorTab, label: '📚文献', count: sciencePapers.length + literature.length },
   ];
+
+  // AI思考步骤渲染（避免JSX嵌套模板复杂度）
+  const aiSteps = [
+    { icon: '🧠', text: `正在分析您的问题：${searchQuery}`, done: true },
+    { icon: '📚', text: '正在检索本地知识库（适应证 + 文献 + 指南）', done: true },
+    { icon: '🔬', text: '正在匹配相关临床证据', done: aiContent.length > 0 },
+    { icon: '✍️', text: '正在生成专业回答', done: aiContent.length > 0 },
+  ];
+
+  const renderSteps = () => aiSteps.map((step) => (
+    <div key={step.icon} className="flex items-center gap-2.5">
+      {step.done
+        ? <span className="text-green-500 text-sm flex-shrink-0">✓</span>
+        : <span className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />}
+      <span className={`text-xs ${step.done ? 'text-gray-500' : 'text-indigo-600'}`}>
+        {step.icon} {step.text}
+      </span>
+    </div>
+  ));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -1197,10 +1463,19 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
               <h1 className="text-sm font-bold">FMTWiki 专业版</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* User Points Card */}
+            <button
+              onClick={onOpenUserCenter}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full transition"
+            >
+              <span className="text-sm">⭐</span>
+              <span className="text-xs font-bold text-white">{currentUser.points}</span>
+              <span className="text-xs text-white/60">积分</span>
+            </button>
             <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full">👨‍⚕️ 医生</span>
             <button onClick={() => setShowEvidenceGuide(true)} className="px-3 py-1.5 bg-white border border-blue-200 rounded-full text-xs text-blue-600 hover:bg-blue-50 transition">📊 证据说明</button>
-            <button onClick={onOpenAISearch} className="px-3 py-1.5 bg-blue-500 border border-blue-400 rounded-full text-xs text-white hover:bg-blue-400 transition font-medium">🤖 AI咨询</button>
+            <button onClick={() => setShowDecisionTree(true)} className="px-3 py-1.5 bg-indigo-600 border border-indigo-500 rounded-full text-xs text-white hover:bg-indigo-500 transition font-medium">🔀 决策树</button>
             <button onClick={onLogout} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">
               退出
             </button>
@@ -1224,25 +1499,169 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
       </div>
 
 
-      {/* Decision Tree Entry */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2 flex-shrink-0">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => setShowDecisionTree(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-blue-700 hover:to-indigo-700 transition shadow-sm"
-          >
-            <span>🔀</span>
-            <span>FMT临床决策树</span>
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">快速判断适用性</span>
-          </button>
+      {/* 搜索栏 */}
+      {view.kind === 'list' && (
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleKBSearch()}
+                  placeholder="搜索适应证、文献、指南…"
+                  className="w-full pl-9 pr-28 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                />
+                {/* 右侧两按钮 */}
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1">
+                  <button onClick={handleKBSearch}
+                    className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                    📖 知识库检索
+                  </button>
+                  <button onClick={() => handleAISearch()}
+                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                    🤖 AI智能搜索
+                  </button>
+                </div>
+              </div>
+              {(kbResults || aiContent || aiLoading) && (
+                <button onClick={clearDoctorSearch}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* 知识库检索结果（AI模式下隐藏） */}
+            {searchMode !== 'ai' && kbLoading && (
+              <div className="flex items-center gap-2 mt-2 text-xs text-blue-600">
+                <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                正在检索知识库…
+              </div>
+            )}
+            {searchMode === 'kb' && kbResults !== null && kbResults.length > 0 && !aiLoading && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-green-600">
+                <span>✅</span> 知识库找到 <strong>{kbResults.length}</strong> 条相关结果
+              </div>
+            )}
+            {searchMode === 'kb' && kbResults !== null && kbResults.length === 0 && !aiLoading && (
+              <div className="mt-2 text-xs text-gray-400">📖 知识库暂无「{searchQuery}」相关内容，正在启动 AI 智能搜索…</div>
+            )}
+
+            {/* AI 四阶段显示 */}
+            {(aiLoading || aiContent || aiError) && (
+              <div className="mt-3 bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
+                {/* 标题栏 */}
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-3 flex items-center gap-2">
+                  <span className="text-white text-sm">🤖</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">AI 智能分析</p>
+                    <p className="text-xs text-white/60">基于 DeepSeek 大模型 · FMT 医学知识库</p>
+                  </div>
+                  {aiLoading && (
+                    <div className="ml-auto flex items-center gap-1.5 text-white/80 text-xs">
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-ping" />
+                      分析中…
+                    </div>
+                  )}
+                </div>
+                {/* AI思考动画 - DeepSeek风格 */}
+                {aiLoading && (
+                  <div className="px-4 py-4 border-t border-indigo-50">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      {/* Thinking进度步骤（内容来时✍️立即变✓） */}
+                      <div className="space-y-2.5 mb-4">
+                        {renderSteps()}
+                      </div>
+                      {/* 实时输出区（内容逐字出现，光标跟随） */}
+                      <div className="bg-white rounded-lg border border-gray-200 p-3 min-h-[60px]">
+                        <div className="text-xs text-gray-700 leading-6 whitespace-pre-wrap">{aiContent}</div>
+                        {aiLoading && <span className="inline-block w-1.5 h-3.5 bg-indigo-400 ml-1 animate-pulse align-middle" />}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-400">基于 DeepSeek 大模型 · FMT 医学知识库</span>
+                      <button
+                        onClick={() => { aiAbortRef.current?.(); setAiLoading(false); setAiContent(''); setAiError(null); }}
+                        className="px-3 py-1 bg-white border border-gray-200 text-gray-500 rounded-lg text-xs hover:bg-gray-50 transition"
+                      >
+                        ⏹ 停止
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* AI回答（完成后） */}
+                {!aiLoading && aiContent && (
+                  <div className="px-4 py-4 border-t border-indigo-50">
+                    <div className="text-sm text-gray-700 leading-7 whitespace-pre-line">{aiContent}</div>
+                    {/* 免责声明 */}
+                    <div className="mt-3 pt-3 border-t border-gray-100 bg-amber-50 rounded-xl px-3 py-2">
+                      <p className="text-xs text-amber-700 leading-relaxed">
+                        <strong>⚠️ 免责声明：</strong>以上 AI 回答仅供参考，不能替代医生诊断。具体治疗方案请遵医嘱。
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {/* AI错误 */}
+                {aiError && !aiLoading && (
+                  <div className="px-4 py-3 border-t border-indigo-50">
+                    <p className="text-xs text-red-600">⚠️ {aiError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 知识库结果列表（AI模式下隐藏） */}
+            {searchMode !== 'ai' && !aiLoading && kbResults !== null && kbResults.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {kbResults.slice(0, 8).map(r => (
+                  <button key={r.id}
+                    onClick={() => {
+                      // 根据类型导航到对应详情页
+                      if (r.id.startsWith('disease-')) {
+                        const d = diseases.find(x => x.id === r.id.replace('disease-', ''));
+                        if (d) setView({ kind: 'disease', disease: d });
+                      } else if (r.id.startsWith('team-')) {
+                        const t = teams.find(x => x.id === r.id.replace('team-', ''));
+                        if (t) setView({ kind: 'team', team: t });
+                      } else if (r.id.startsWith('aiApp-')) {
+                        const a = aiApps.find(x => x.id === r.id.replace('aiApp-', ''));
+                        if (a) setView({ kind: 'aiApp', app: a });
+                      } else if (r.id.startsWith('science-') || r.id.startsWith('literature-')) {
+                        const entry = literature.find(x => x.id === r.id.replace('literature-', '').replace('science-', '')) ||
+                          sciencePapers.find(x => x.id === (r.id.includes('science-') ? r.id.replace('science-', '') : r.id));
+                        if (entry) {
+                          if ('journal' in entry) setView({ kind: 'literature', entry });
+                          else setView({ kind: 'science', paper: entry as SciencePaper });
+                        }
+                      }
+                      clearDoctorSearch();
+                    }}
+                    className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition">
+                    <p className="text-xs text-blue-400 mb-0.5 font-medium">{r.type}</p>
+                    <p className="text-sm font-semibold text-gray-800">{r.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{r.summary}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {view.kind === 'list' && (
+        {view.kind === 'list' && !(searchMode === 'ai' || aiLoading || aiContent) && (
           <>
-            {view.tab === 'disease' && <DiseaseTab onSelect={d => setView({ kind: 'disease', disease: d })} />}
+            {view.tab === 'disease' && <DiseaseTab onSelect={d => setView({ kind: 'disease', disease: d })} query={searchQuery} />}
             {view.tab === 'teams' && <TeamsTab onSelect={t => setView({ kind: 'team', team: t })} />}
             {view.tab === 'ai' && <AIAppsTab onSelect={a => setView({ kind: 'aiApp', app: a })} />}
             {view.tab === 'scienceLit' && (
@@ -1266,7 +1685,7 @@ export default function DoctorPortal({ onLogout, onOpenAISearch }: DoctorPortalP
       </div>
 
       {/* Disclaimer */}
-      {view.kind === 'list' && (
+      {view.kind === 'list' && !(searchMode === 'ai' || aiLoading || aiContent) && (
         <div className="max-w-4xl mx-auto px-4 pb-4">
           <div className="bg-gray-100 rounded-xl p-3 text-xs text-gray-400 text-center leading-relaxed">
             <strong>免责：</strong>本知识库仅供医学参考，FMT为研究性治疗，不构成临床决策依据。<br />

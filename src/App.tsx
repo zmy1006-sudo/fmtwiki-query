@@ -2,7 +2,6 @@ import { useState } from 'react';
 import LoginPage from './LoginPage';
 import DoctorPortal from './DoctorPortal';
 import PatientPortal from './PatientPortal';
-import { AISearchPanel } from './AISearchPanel';
 import { EvidenceGuide } from './EvidenceGuide';
 import { LandingPage } from './LandingPage';
 import { LandingPageB } from './LandingPageB';
@@ -19,9 +18,7 @@ type AppView =
   | { screen: 'landingB' }
   | { screen: 'landingC' }
   | { screen: 'landingD' }
-  | { screen: 'landingE' }
   | { screen: 'login' }
-  | { screen: 'aiSearch'; portal: 'doctor' | 'patient' }
   | { screen: 'doctor'; tab: DoctorTab }
   | { screen: 'patient'; tab: PatientEduCategory }
   | { screen: 'evidenceGuide' };
@@ -35,10 +32,6 @@ export default function App() {
     } else {
       setView({ screen: 'patient', tab: '全部' });
     }
-  }
-
-  function handleAISearch(portal: 'doctor' | 'patient') {
-    setView({ screen: 'aiSearch', portal });
   }
 
   function handleLogout() {
@@ -82,20 +75,13 @@ export default function App() {
         />
       )}
       {view.screen === 'login' && (
-        <LoginPage onEnter={handleEnter} onAISearch={handleAISearch} onShowEvidenceGuide={() => setView({ screen: 'evidenceGuide' })} />
-      )}
-      {view.screen === 'aiSearch' && (
-        <AISearchPanel
-          portal={view.portal}
-          onBack={handleLogout}
-          onResultClick={handleResultClick}
-        />
+        <LoginPage onEnter={handleEnter} onShowEvidenceGuide={() => setView({ screen: 'evidenceGuide' })} />
       )}
       {view.screen === 'doctor' && (
-        <DoctorPortal onLogout={handleLogout} onOpenAISearch={() => handleAISearch('doctor')} />
+        <DoctorPortal onLogout={handleLogout} onOpenUserCenter={() => setView({ screen: 'landingE' })} />
       )}
       {view.screen === 'patient' && (
-        <PatientPortal onLogout={handleLogout} onOpenAISearch={() => handleAISearch('patient')} />
+        <PatientPortal onLogout={handleLogout} onOpenUserCenter={() => setView({ screen: 'landingE' })} />
       )}
       {view.screen === 'evidenceGuide' && (
         <EvidenceGuide onBack={() => setView({ screen: 'landingE' })} />
