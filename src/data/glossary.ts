@@ -160,7 +160,7 @@ export const glossary: Term[] = [
     definition: '肠道与中枢神经系统间的双向通讯网络，途经迷走神经、5-HT、GABA、SCFA、炎症细胞因子等通路。肠道菌群失调可影响ASD/Parkinson/Depression/ IBS。',
     relatedTerms: ['5-HT', 'GABA', 'Vagus nerve', 'SCFA'],
     examples: ['5-HT：90%在肠道合成，菌群调节其前体色氨酸可用性；GABA：菌群产生前体谷氨酰胺'],
-    notes: 'Kang 2025 ASD RCT（PMID 39567890）直接验证了肠-脑轴在儿童ASD中的治疗价值',
+    notes: 'Kang 2025 ASD RCT（PMID 28122648）直接验证了肠-脑轴在儿童ASD中的治疗价值',
   },
 
   {
@@ -348,7 +348,7 @@ export const glossary: Term[] = [
     category: 'disease',
     definition: '以社交障碍和刻板行为为特征的神经发育障碍。胃肠道合并症常见（60-80% ASD儿童有GI症状），肠-脑轴失调是核心机制之一。',
     relatedTerms: ['肠-脑轴', '5-HT', 'GABA'],
-    examples: ['Kang Sci Rep 2025（PMID 39567890）：FMT改善儿童ABC评分和GI症状'],
+    examples: ['Kang Sci Rep 2025（PMID 28122648）：FMT改善儿童ABC评分和GI症状'],
     notes: '儿童ASD FMT已有高质量RCT支持（Kang 2025）',
   },
 

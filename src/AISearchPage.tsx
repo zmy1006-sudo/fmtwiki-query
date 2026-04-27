@@ -38,6 +38,8 @@ export default function AISearchPage({ portal, onBack }: Props) {
   const [aiError, setAiError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<SearchRecord | null>(null);
+  type ViewKind = 'list' | 'glossary' | 'protocol' | 'safety' | 'mechanism';
+  const [view, setView] = useState<{ kind: ViewKind; entry?: any }>({ kind: 'list' });
   const [kbEmpty, setKbEmpty] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
   const abortRef = useRef<(() => void) | null>(null);
@@ -70,6 +72,7 @@ export default function AISearchPage({ portal, onBack }: Props) {
     setSearched(false);
     setSelectedRecord(null);
     setKbEmpty(false);
+    setView({ kind: 'list' });
     inputRef.current?.focus();
   }
 
@@ -84,6 +87,7 @@ export default function AISearchPage({ portal, onBack }: Props) {
     setAiError(null);
     setSelectedRecord(null);
     setKbEmpty(false);
+    setView({ kind: 'list' });
     setKbLoading(true);
     setAiThinking(true); // 先显示AI加载状态
 
@@ -249,8 +253,31 @@ export default function AISearchPage({ portal, onBack }: Props) {
       {/* ── 主内容区 ──────────────────────────────────── */}
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-5 space-y-4">
 
+        {/* ── 新类型详情面板 ────────────────────────── */}
+        {view.kind !== 'list' && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+              <button
+                onClick={() => setView({ kind: 'list' })}
+                className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-xs text-gray-500">← 返回搜索结果</span>
+            </div>
+            <div className="p-4">
+              {view.kind === 'glossary' && <GlossaryDetail entry={view.entry} />}
+              {view.kind === 'protocol' && <ProtocolDetail entry={view.entry} />}
+              {view.kind === 'safety' && <SafetyDetail entry={view.entry} />}
+              {view.kind === 'mechanism' && <MechanismDetail entry={view.entry} />}
+            </div>
+          </div>
+        )}
+
         {/* 知识库结果 */}
-        {searched && (
+        {searched && view.kind === 'list' && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -276,7 +303,13 @@ export default function AISearchPage({ portal, onBack }: Props) {
                 {results.slice(0, 10).map((r, i) => (
                   <button
                     key={r.id || i}
-                    onClick={() => setSelectedRecord(selectedRecord?.id === r.id ? null : r)}
+                    onClick={() => {
+                      if (['glossary', 'protocol', 'safety', 'mechanism'].includes(r.type)) {
+                        setView({ kind: r.type as ViewKind, entry: r });
+                      } else {
+                        setSelectedRecord(selectedRecord?.id === r.id ? null : r);
+                      }
+                    }}
                     className={`w-full text-left p-4 rounded-xl border transition hover:shadow-sm ${
                       selectedRecord?.id === r.id
                         ? 'border-emerald-400 bg-emerald-50'
@@ -330,7 +363,7 @@ export default function AISearchPage({ portal, onBack }: Props) {
         )}
 
         {/* AI 分析结果 */}
-        {(searched && (aiContent || aiThinking || aiError)) && (
+        {view.kind === 'list' && (searched && (aiContent || aiThinking || aiError)) && (
           <div ref={aiContentRef} className="bg-white rounded-2xl border border-indigo-100 shadow-md overflow-hidden">
             {/* 紫色渐变头部 */}
             <div className="px-5 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-between">
@@ -473,7 +506,7 @@ export default function AISearchPage({ portal, onBack }: Props) {
         )}
 
         {/* 空白状态 */}
-        {!searched && (
+        {view.kind === 'list' && !searched && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-4xl mb-5 shadow-sm">
               🤖
@@ -497,6 +530,241 @@ export default function AISearchPage({ portal, onBack }: Props) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── InfoCard helper (shared across all detail panels) ──────
+function InfoCard({ icon, title, color, children }: {
+  icon: string; title: string; color: 'emerald' | 'indigo' | 'amber' | 'red' | 'blue' | 'violet';
+  children: React.ReactNode;
+}) {
+  const colorMap = {
+    emerald: 'bg-emerald-50 border-emerald-100',
+    indigo:  'bg-indigo-50  border-indigo-100',
+    amber:   'bg-amber-50   border-amber-100',
+    red:     'bg-red-50     border-red-100',
+    blue:    'bg-blue-50    border-blue-100',
+    violet:  'bg-violet-50  border-violet-100',
+  };
+  return (
+    <div className={`${colorMap[color]} border rounded-xl p-3.5`}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="text-sm">{icon}</span>
+        <span className="text-xs font-bold text-gray-700">{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── GlossaryDetail ─────────────────────────────────────────
+function GlossaryDetail({ entry }: { entry: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="bg-emerald-50 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+            {entry.meta?.category || entry.category || '术语'}
+          </span>
+          {entry.meta?.abbreviation && (
+            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">{entry.meta.abbreviation}</span>
+          )}
+        </div>
+        <h2 className="text-base font-bold text-gray-900">{entry.title}</h2>
+        {entry.meta?.termEn && (
+          <p className="text-xs text-gray-400 mt-0.5">{entry.meta.termEn}</p>
+        )}
+      </div>
+      <InfoCard icon="📖" title="定义" color="emerald">
+        <p className="text-sm text-gray-700 leading-relaxed">{entry.summary}</p>
+      </InfoCard>
+      {entry.tags?.filter((t: string) => t && !['preparation','route','mechanism','evidence','disease','organization','product'].includes(t)).length > 0 && (
+        <InfoCard icon="🔗" title="关联术语" color="blue">
+          <div className="flex flex-wrap gap-1.5">
+            {entry.tags.filter((t: string) => t && !['preparation','route','mechanism','evidence','disease','organization','product'].includes(t)).map((t: string) => (
+              <span key={t} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{t}</span>
+            ))}
+          </div>
+        </InfoCard>
+      )}
+      {entry.meta?.notes && (
+        <InfoCard icon="⚠️" title="临床注意" color="amber">
+          <p className="text-xs text-gray-600 leading-relaxed">{entry.meta.notes}</p>
+        </InfoCard>
+      )}
+    </div>
+  );
+}
+
+// ── ProtocolDetail ─────────────────────────────────────────
+function ProtocolDetail({ entry }: { entry: any }) {
+  const steps = entry.meta?.steps || [];
+  const indications = entry.meta?.indications || [];
+  const contraindications = entry.meta?.contraindications || [];
+  return (
+    <div className="space-y-4">
+      <div className="bg-indigo-50 rounded-xl p-4">
+        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">
+          {entry.meta?.category || 'SOP'}
+        </span>
+        <h2 className="text-base font-bold text-gray-900 mt-1">{entry.title}</h2>
+        <p className="text-xs text-gray-500 mt-1">{entry.summary}</p>
+      </div>
+      {entry.meta?.description && (
+        <InfoCard icon="📋" title="概述" color="indigo">
+          <p className="text-sm text-gray-700 leading-relaxed">{entry.meta.description}</p>
+        </InfoCard>
+      )}
+      {steps.length > 0 && (
+        <InfoCard icon="📝" title="操作步骤" color="indigo">
+          <div className="space-y-3">
+            {steps.map((step: any, i: number) => (
+              <div key={i} className="flex gap-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800">
+                    {typeof step === 'string' ? step : (step.description || step.title || '')}
+                  </p>
+                  {typeof step === 'object' && step.description && (
+                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </InfoCard>
+      )}
+      {indications.length > 0 && (
+        <InfoCard icon="✅" title="适应证" color="emerald">
+          <ul className="space-y-1">
+            {indications.map((ind: string, i: number) => (
+              <li key={i} className="text-xs text-gray-700">• {ind}</li>
+            ))}
+          </ul>
+        </InfoCard>
+      )}
+      {contraindications.length > 0 && (
+        <InfoCard icon="🚫" title="禁忌" color="red">
+          <ul className="space-y-1">
+            {contraindications.map((con: string, i: number) => (
+              <li key={i} className="text-xs text-red-700">• {con}</li>
+            ))}
+          </ul>
+        </InfoCard>
+      )}
+      {entry.meta?.keyPoints?.length > 0 && (
+        <InfoCard icon="💡" title="关键要点" color="amber">
+          <ul className="space-y-1">
+            {entry.meta.keyPoints.map((kp: string, i: number) => (
+              <li key={i} className="text-xs text-gray-700">• {kp}</li>
+            ))}
+          </ul>
+        </InfoCard>
+      )}
+    </div>
+  );
+}
+
+// ── SafetyDetail ───────────────────────────────────────────
+function SafetyDetail({ entry }: { entry: any }) {
+  const severity = entry.meta?.severity || entry.meta?.grade;
+  const symptoms = entry.meta?.symptoms || [];
+  const warnings = entry.meta?.warnings || [];
+  return (
+    <div className="space-y-4">
+      <div className="bg-red-50 rounded-xl p-4">
+        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">
+          {entry.meta?.category || '安全性'}
+        </span>
+        <h2 className="text-base font-bold text-gray-900 mt-1">{entry.title}</h2>
+        {severity && (
+          <span className={`text-xs px-2 py-0.5 rounded font-medium mt-1 inline-block ${
+            severity === 'Severe' || severity === 'Serious' ? 'bg-red-100 text-red-700' :
+            severity === 'Moderate' ? 'bg-amber-100 text-amber-700' :
+            severity === 'Mild' ? 'bg-blue-100 text-blue-700' :
+            severity === 'Absolute' ? 'bg-red-100 text-red-700' :
+            severity === 'Relative' ? 'bg-amber-100 text-amber-700' :
+            'bg-gray-100 text-gray-600'
+          }`}>{severity}</span>
+        )}
+      </div>
+      <InfoCard icon="📖" title="说明" color="red">
+        <p className="text-sm text-gray-700 leading-relaxed">{entry.summary}</p>
+      </InfoCard>
+      {symptoms.length > 0 && (
+        <InfoCard icon="🩺" title="症状表现" color="amber">
+          <ul className="space-y-1">
+            {symptoms.map((s: string, i: number) => (
+              <li key={i} className="text-xs text-gray-700">• {s}</li>
+            ))}
+          </ul>
+        </InfoCard>
+      )}
+      {entry.meta?.management && (
+        <InfoCard icon="💊" title="处理措施" color="amber">
+          <p className="text-sm text-gray-700 leading-relaxed">{entry.meta.management}</p>
+        </InfoCard>
+      )}
+      {warnings.length > 0 && (
+        <InfoCard icon="⚠️" title="注意事项" color="red">
+          <ul className="space-y-1">
+            {warnings.map((w: string, i: number) => (
+              <li key={i} className="text-xs text-gray-700 leading-relaxed">• {w}</li>
+            ))}
+          </ul>
+        </InfoCard>
+      )}
+    </div>
+  );
+}
+
+// ── MechanismDetail ────────────────────────────────────────
+function MechanismDetail({ entry }: { entry: any }) {
+  const keyBacteria = entry.meta?.keyBacteria || entry.meta?.keyPathways?.map((p: any) => p.name).filter(Boolean) || [];
+  const relatedOrgans = entry.meta?.relatedOrgans || [];
+  return (
+    <div className="space-y-4">
+      <div className="bg-violet-50 rounded-xl p-4">
+        <span className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-bold">
+          {entry.meta?.category || '机制'}
+        </span>
+        <h2 className="text-base font-bold text-gray-900 mt-1">{entry.title}</h2>
+        {entry.meta?.nameEn && (
+          <p className="text-xs text-gray-500 mt-0.5">{entry.meta.nameEn}</p>
+        )}
+        {relatedOrgans.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {relatedOrgans.map((org: string) => (
+              <span key={org} className="px-1.5 py-0.5 bg-violet-100 text-violet-600 rounded text-xs">{org}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <InfoCard icon="🔬" title="机制说明" color="violet">
+        <p className="text-sm text-gray-700 leading-relaxed">{entry.summary}</p>
+      </InfoCard>
+      {keyBacteria.length > 0 && (
+        <InfoCard icon="🦠" title="关键菌属" color="emerald">
+          <div className="flex flex-wrap gap-1.5">
+            {keyBacteria.map((bac: string) => (
+              <span key={bac} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs">{bac}</span>
+            ))}
+          </div>
+        </InfoCard>
+      )}
+      {entry.meta?.description && (
+        <InfoCard icon="📋" title="详细信息" color="violet">
+          <p className="text-xs text-gray-600 leading-relaxed">{entry.meta.description}</p>
+        </InfoCard>
+      )}
+      {entry.meta?.clinicalRelevance && (
+        <InfoCard icon="💊" title="临床相关性" color="blue">
+          <p className="text-sm text-gray-700 leading-relaxed">{entry.meta.clinicalRelevance}</p>
+        </InfoCard>
+      )}
     </div>
   );
 }

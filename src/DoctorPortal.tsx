@@ -249,9 +249,35 @@ function DecisionResultView({ decision, onBack, allTeams, onShowEvidenceGuide }:
     </div>
   );
 }
+// ── InfoCard ─────────────────────────────────────────────────
+function InfoCard({ icon, title, color, children }: { icon: string; title: string; color: string; children: React.ReactNode }) {
+  const colors: Record<string, { border: string; title: string; bg: string }> = {
+    blue:    { border: 'border-blue-200',   title: 'text-blue-700',   bg: 'bg-blue-50'    },
+    violet:  { border: 'border-violet-200', title: 'text-violet-700', bg: 'bg-violet-50'  },
+    cyan:    { border: 'border-cyan-200',   title: 'text-cyan-700',   bg: 'bg-cyan-50'    },
+    emerald: { border: 'border-emerald-200',title: 'text-emerald-700',bg: 'bg-emerald-50' },
+    amber:   { border: 'border-amber-200',  title: 'text-amber-700',  bg: 'bg-amber-50'   },
+    gray:    { border: 'border-gray-200',  title: 'text-gray-600',   bg: 'bg-gray-50'    },
+    green:   { border: 'border-green-200', title: 'text-green-700',  bg: 'bg-green-50'   },
+    red:     { border: 'border-red-200',   title: 'text-red-700',    bg: 'bg-red-50'     },
+    indigo:  { border: 'border-indigo-200', title: 'text-indigo-700', bg: 'bg-indigo-50'  },
+  };
+  const c = colors[color] || colors.gray;
+  return (
+    <div className={`bg-white rounded-xl border ${c.border} ${c.bg} p-5`}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-base">{icon}</span>
+        <p className={`text-xs font-bold uppercase tracking-wide ${c.title}`}>{title}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function DiseaseDetail({ disease, onBack, onShowEvidenceGuide }: { disease: Disease; onBack: () => void; onShowEvidenceGuide?: () => void }) {
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 顶栏 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition"><BackIcon /></button>
@@ -262,48 +288,80 @@ function DiseaseDetail({ disease, onBack, onShowEvidenceGuide }: { disease: Dise
           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${disease.gradeColor}`}>{disease.gradeLabel}</span>
         </div>
       </div>
+
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">证据等级</p>
+
+        {/* FMT疗效 */}
+        {disease.efficacy && (
+          <InfoCard icon="💊" title="FMT疗效" color="green">
+            <p className="text-sm text-green-800 font-medium">{disease.efficacy}</p>
+            <div className="mt-2">
               {onShowEvidenceGuide ? (
                 <button
                   onClick={onShowEvidenceGuide}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-600 hover:bg-blue-100 transition"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 border border-green-200 rounded-full text-xs text-green-700 font-semibold hover:bg-green-200 transition"
                 >
-                  📖 证据等级：{disease.evidenceGrade}
+                  📖 {disease.evidenceGrade}
                 </button>
               ) : (
-                <p className="text-sm font-bold text-gray-800 mt-0.5">{disease.evidenceGrade}</p>
+                <p className="text-xs text-green-600 font-semibold">{disease.evidenceGrade}</p>
               )}
-              <p className="text-sm text-gray-600 mt-1">{disease.efficacy}</p>
             </div>
-          </div>
-        </div>
-        {disease.warnings ? (
+          </InfoCard>
+        )}
+
+        {/* 警示 */}
+        {disease.warnings && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <span className="text-xl">⚠️</span>
             <p className="text-sm text-red-700 leading-relaxed">{disease.warnings}</p>
           </div>
-        ) : null}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-amber-800 mb-1">📖 关键参考文献</p>
-          <p className="text-sm text-amber-900 font-medium">{disease.keyRef}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">概述</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{disease.summary}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">💊 临床方案</p>
+        )}
+
+        {/* 典型特征 */}
+        {disease.clinicalFeatures && (
+          <InfoCard icon="🩺" title="典型特征" color="blue">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.clinicalFeatures}</p>
+          </InfoCard>
+        )}
+
+        {/* 流行病学 */}
+        {disease.epidemiology && (
+          <InfoCard icon="📊" title="流行病学" color="violet">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.epidemiology}</p>
+          </InfoCard>
+        )}
+
+        {/* 诊断标准 */}
+        {disease.diagnosticCriteria && (
+          <InfoCard icon="🔬" title="诊断标准" color="cyan">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.diagnosticCriteria}</p>
+          </InfoCard>
+        )}
+
+        {/* 疾病概述 */}
+        {disease.summary && (
+          <InfoCard icon="📋" title="疾病概述" color="gray">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.summary}</p>
+          </InfoCard>
+        )}
+
+        {/* FMT适应证 */}
+        {disease.patientCriteria && (
+          <InfoCard icon="✅" title="FMT适应证" color="emerald">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.patientCriteria}</p>
+          </InfoCard>
+        )}
+
+        {/* 预后与结局 */}
+        {disease.diseaseProgression && (
+          <InfoCard icon="📈" title="预后与结局" color="amber">
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{disease.diseaseProgression}</p>
+          </InfoCard>
+        )}
+
+        {/* 临床方案 */}
+        <InfoCard icon="💊" title="临床方案" color="indigo">
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-blue-50 rounded-lg p-3">
@@ -316,35 +374,34 @@ function DiseaseDetail({ disease, onBack, onShowEvidenceGuide }: { disease: Dise
               </div>
               <div className="bg-purple-50 rounded-lg p-3">
                 <p className="text-xs font-bold text-purple-600 mb-1">疗程/频次</p>
-                <p className="text-xs text-gray-700 leading-relaxed">{disease.frequency}</p>
+                <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{disease.frequency}</p>
               </div>
             </div>
-            {disease.protocolNote ? (
+            {disease.protocolNote && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs font-bold text-gray-500 mb-1">方案备注</p>
-                <p className="text-xs text-gray-600 leading-relaxed">{disease.protocolNote}</p>
+                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{disease.protocolNote}</p>
               </div>
-            ) : null}
+            )}
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-red-100 p-5">
-          <p className="text-xs font-bold text-red-400 uppercase tracking-wide mb-2">禁忌证</p>
-          <p className="text-sm text-red-700 leading-relaxed">{disease.contraindications}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">来源引用（可点击验证）</p>
-          </div>
+        </InfoCard>
+
+        {/* 禁忌证 */}
+        {disease.contraindications && (
+          <InfoCard icon="🚫" title="禁忌证" color="red">
+            <p className="text-sm text-red-700 leading-relaxed whitespace-pre-line">{disease.contraindications}</p>
+          </InfoCard>
+        )}
+
+        {/* 参考文献 */}
+        <InfoCard icon="📖" title="关键文献" color="gray">
           <div className="space-y-2">
             {disease.sources.map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-200 transition">
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                   s.type === 'PMID' ? 'bg-green-100 text-green-700' :
-                  s.type === 'NCT' ? 'bg-blue-100 text-blue-700' :
+                  s.type === 'NCT'  ? 'bg-blue-100 text-blue-700' :
                   'bg-gray-100 text-gray-600'
                 }`}>{s.type === 'PMID' ? 'P' : s.type === 'NCT' ? 'N' : 'W'}</span>
                 <span className="text-xs text-gray-700 flex-1 leading-relaxed">{s.label}</span>
@@ -352,7 +409,8 @@ function DiseaseDetail({ disease, onBack, onShowEvidenceGuide }: { disease: Dise
               </a>
             ))}
           </div>
-        </div>
+        </InfoCard>
+
       </div>
     </div>
   );
@@ -401,159 +459,158 @@ function TeamDetail({ team, onBack, onTeamClick, allTeams }: { team: Team; onBac
         </div>
       </div>
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-xs text-gray-400 font-semibold uppercase">负责人</p>
-          <p className="text-sm font-bold text-gray-800 mt-0.5">{team.leader}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{team.title}</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <p className="text-xs font-bold text-blue-700 mb-2">研究方向</p>
-          <div className="flex flex-wrap gap-2">
-            {team.directions.map(d => (
-              <span key={d} className="px-2.5 py-1 bg-white border border-blue-200 rounded-full text-xs text-blue-700 font-medium">{d}</span>
-            ))}
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs font-bold text-gray-400 uppercase mb-2">最新成果</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{team.latestResult}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs font-bold text-gray-400 uppercase mb-3">对接方式</p>
-          <div className="space-y-2">
+
+        {/* 负责人信息卡 */}
+        <InfoCard icon="👤" title="负责人信息" color="green">
+          <p className="text-sm font-bold text-green-800 mt-1">{team.leader}</p>
+          <p className="text-xs text-green-600 mt-0.5">{team.title}</p>
+          {/* 联系方式：图标+文字组合 */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {team.contact.map((c, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="text-xs font-bold text-gray-400 w-10 flex-shrink-0 pt-0.5">{c.type}</span>
-                <span className="text-sm text-gray-700">{c.value}</span>
+              <div key={i} className="bg-white/70 rounded-lg px-3 py-2 flex items-center gap-2">
+                <span className="text-green-500 flex-shrink-0">
+                  {c.type === '电话' || c.type === '手机' ? '📞' : '📧'}
+                </span>
+                <span className="text-xs text-green-800 leading-snug break-all">{c.value}</span>
               </div>
             ))}
           </div>
-          {team.website ? (
+          {team.website && (
             <a href={team.website} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 hover:bg-blue-100 transition">
-              官网 <ExternalIcon />
+              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-green-100 border border-green-200 rounded-full text-xs text-green-700 hover:bg-green-200 transition">
+              🌐 官网 <ExternalIcon />
             </a>
-          ) : null}
-        </div>
+          )}
+        </InfoCard>
+
+        {/* 研究方向标签卡 */}
+        <InfoCard icon="🔬" title="研究方向" color="blue">
+          <div className="flex flex-wrap gap-2 mt-1">
+            {team.directions.map(d => (
+              <span key={d} className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 font-medium">{d}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => onTeamClick(relatedTeams[0]?.id || team.id)}
+            className="mt-3 inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-blue-200 rounded-full text-xs text-blue-600 hover:bg-blue-50 transition"
+          >
+            🔍 查看同类团队
+          </button>
+        </InfoCard>
+
+        {/* 最新成果卡 */}
+        <InfoCard icon="🏆" title="最新成果" color="amber">
+          <div className="mt-1 bg-amber-50 rounded-lg p-3">
+            <p className="text-sm text-amber-800 font-medium leading-relaxed">{team.latestResult}</p>
+          </div>
+        </InfoCard>
+
+        {/* 代表论文卡 */}
         {team.publications && team.publications.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-3">代表论文</p>
-            <div className="space-y-2">
+          <InfoCard icon="📄" title="代表论文" color="gray">
+            <div className="space-y-2 mt-1">
               {team.publications.map((pub, i) => (
                 <a key={i} href={pub.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-start gap-2 px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">P</span>
+                  className="flex items-start gap-2 px-3 py-3 bg-gray-50 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-200 transition">
+                  <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5 border border-green-200">P</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-700 leading-snug">{pub.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{pub.journal} · {pub.year} · PMID {pub.pmid}</p>
+                    <p className="text-xs font-medium text-gray-800 leading-snug">{pub.title}</p>
+                    <p className="text-xs italic text-gray-500 mt-0.5">{pub.journal}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-500">{pub.year}</span>
+                      <span className="text-xs text-gray-400">PMID {pub.pmid}</span>
+                    </div>
                   </div>
                   <ExternalIcon />
                 </a>
               ))}
             </div>
-          </div>
+          </InfoCard>
         )}
-        {/* ── 企业管线扩展详情 ── */}
+
+        {/* 企业概况卡（重点优化） */}
         {(team as any).enterprise && (
           <>
-            {/* 公司概况 */}
-            {(team as any).enterprise.description && (
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-5">
-                <p className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-2">公司概况</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{(team as any).enterprise.description}</p>
-              </div>
-            )}
-
-            {/* 公司状态 + 全球布局 */}
-            <div className="grid grid-cols-2 gap-3">
-              {(team as any).enterprise.companyStatus && (
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <p className="text-xs font-bold text-purple-600 mb-1">融资/上市状态</p>
-                  <p className="text-xs text-gray-700">{(team as any).enterprise.companyStatus}</p>
-                </div>
-              )}
-              {(team as any).enterprise.globalSites && (team as any).enterprise.globalSites.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <p className="text-xs font-bold text-blue-600 mb-1">全球布局</p>
-                  <div className="space-y-0.5">
-                    {(team as any).enterprise.globalSites.map((s: string, i: number) => (
-                      <div key={i} className="text-xs text-gray-600">• {s}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 药物管线表格 */}
-            {(team as any).enterprise.pipeline && (team as any).enterprise.pipeline.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-100 bg-purple-50">
-                  <p className="text-xs font-bold text-purple-700">药物管线</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead className="bg-gray-50">
-                      <tr className="text-left text-gray-500">
-                        <th className="px-4 py-2 font-semibold">代号</th>
-                        <th className="px-4 py-2 font-semibold">类型</th>
-                        <th className="px-4 py-2 font-semibold">适应证</th>
-                        <th className="px-4 py-2 font-semibold">阶段</th>
-                        <th className="px-4 py-2 font-semibold">备注</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {(team as any).enterprise.pipeline.map((p: any, i: number) => (
-                        <tr key={i} className="hover:bg-purple-50/30">
-                          <td className="px-4 py-2.5 font-mono font-bold text-purple-700">{p.code}</td>
-                          <td className="px-4 py-2.5 text-gray-600">{p.type}</td>
-                          <td className="px-4 py-2.5 text-gray-700">{p.indication}</td>
-                          <td className="px-4 py-2.5">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                              p.stage.includes('Phase 3') || p.stage.includes('临床III') || p.stage.includes('临床II期') ? 'bg-green-100 text-green-700' :
-                              p.stage.includes('Phase 2') || p.stage.includes('临床II') ? 'bg-blue-100 text-blue-700' :
-                              p.stage.includes('Phase 1') || p.stage.includes('临床I') ? 'bg-amber-100 text-amber-700' :
-                              p.stage.includes('临床前') || p.stage.includes('Pre') ? 'bg-gray-100 text-gray-600' :
-                              'bg-slate-100 text-slate-600'
-                            }`}>{p.stage}</span>
-                          </td>
-                          <td className="px-4 py-2.5 text-gray-500 max-w-xs">{p.note}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* 合作伙伴 */}
-            {(team as any).enterprise.collaborations && (team as any).enterprise.collaborations.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3">合作伙伴</p>
-                <div className="space-y-1.5">
-                  {(team as any).enterprise.collaborations.map((c: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600 leading-relaxed">{c}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 发展里程碑 */}
-            {(team as any).enterprise.milestones && (team as any).enterprise.milestones.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3">发展里程碑</p>
-                <div className="space-y-0">
-                  {(team as any).enterprise.milestones.map((m: any, i: number) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 text-xs font-bold text-purple-600 bg-purple-100 rounded px-1.5 py-0.5 text-center flex-shrink-0">{m.year}</div>
-                        {i < ((team as any).enterprise.milestones.length - 1) && (
-                          <div className="w-px flex-1 bg-purple-200 my-0.5" />
-                        )}
+            {((team as any).enterprise.description || ((team as any).enterprise.certifications?.length > 0)) && (
+              <InfoCard icon="🏢" title="企业概况" color="violet">
+                {((team as any).enterprise.description || ((team as any).enterprise.certifications?.length > 0)) && (
+                  <div className="space-y-3 mt-1">
+                    {((team as any).enterprise.description) && (
+                      <div>
+                        <p className="text-xs font-bold text-violet-700 mb-1">📋 机构简介</p>
+                        <p className="text-sm text-gray-700 leading-relaxed">{(team as any).enterprise.description}</p>
                       </div>
-                      <div className="pb-3 text-xs text-gray-600 leading-snug pt-0.5">{m.event}</div>
+                    )}
+                    {/* 资质认证区 */}
+                    {((team as any).enterprise.certifications?.length > 0) && (
+                      <div>
+                        <p className="text-xs font-bold text-violet-700 mb-2">🏅 资质认证</p>
+                        <div className="flex flex-wrap gap-2">
+                          {((team as any).enterprise.certifications as string[]).map((cert: string, i: number) => (
+                            <span key={i} className="px-2.5 py-1 bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-200 rounded-full text-xs text-violet-700 font-medium">{cert}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </InfoCard>
+            )}
+
+            {/* 公司状态 + 临床试验 + 全球布局 */}
+            {((team as any).enterprise.companyStatus || ((team as any).enterprise.clinicalTrials != null) || ((team as any).enterprise.globalSites?.length > 0)) && (
+              <div className="grid grid-cols-3 gap-3">
+                {(team as any).enterprise.companyStatus && (
+                  <div className="bg-white rounded-xl border border-purple-200 p-4">
+                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wide mb-1">融资/上市</p>
+                    <p className="text-xs text-gray-700 leading-snug">{(team as any).enterprise.companyStatus}</p>
+                  </div>
+                )}
+                {((team as any).enterprise.clinicalTrials != null) && (
+                  <div className="bg-white rounded-xl border border-green-200 p-4">
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-wide mb-1">临床试验</p>
+                    <p className="text-xl font-bold text-green-700 leading-none">{(team as any).enterprise.clinicalTrials}</p>
+                    <p className="text-[10px] text-green-500 mt-0.5">项</p>
+                  </div>
+                )}
+                {(team as any).enterprise.globalSites && (team as any).enterprise.globalSites.length > 0 && (
+                  <div className="bg-white rounded-xl border border-blue-200 p-4">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-1">🗺️ 全球布局</p>
+                    <div className="space-y-0.5">
+                      {(team as any).enterprise.globalSites.map((s: string, i: number) => (
+                        <div key={i} className="text-xs text-gray-600 leading-snug">• {s}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SOP/标准特色 */}
+            {((team as any).enterprise.description && ((team as any).enterprise.sopHighlights?.length > 0)) && (
+              <div className="bg-white rounded-xl border border-violet-200 p-4">
+                <p className="text-xs font-bold text-violet-700 mb-2">📑 标准特色</p>
+                <ul className="space-y-1">
+                  {((team as any).enterprise.sopHighlights as string[]).map((s: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-gray-700 leading-relaxed">
+                      <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 竖向时间轴（里程碑/时间线） */}
+            {((team as any).enterprise.milestones?.length > 0) && (
+              <div className="bg-white rounded-xl border border-purple-200 p-4">
+                <p className="text-xs font-bold text-purple-700 mb-3">⏱️ 发展里程碑</p>
+                <div className="border-l-2 border-purple-300 pl-4 space-y-3">
+                  {((team as any).enterprise.milestones as { year: string; event: string }[]).map((m: { year: string; event: string }, i: number) => (
+                    <div key={i} className="relative">
+                      <div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-purple-400 border-2 border-white" />
+                      <div className="text-xs font-bold text-purple-600">{m.year}</div>
+                      <div className="text-xs text-gray-600 leading-snug mt-0.5">{m.event}</div>
                     </div>
                   ))}
                 </div>
@@ -562,24 +619,115 @@ function TeamDetail({ team, onBack, onTeamClick, allTeams }: { team: Team; onBac
           </>
         )}
 
-        {relatedTeams.length > 0 && (
+        {/* 药物管线卡片 */}
+        {(team as any).enterprise?.pipeline?.length > 0 && (
+          <InfoCard icon="💊" title="管线/里程碑" color="indigo">
+            <div className="space-y-3 mt-2">
+              {(team as any).enterprise.pipeline.map((p: any, i: number) => {
+                const phaseColor = p.stage.includes('上市') || p.stage.includes('Approved')
+                  ? 'bg-rose-100 text-rose-700 border-rose-200'
+                  : p.stage.includes('Phase 3') || p.stage.includes('临床III') || p.stage.includes('临床II期')
+                  ? 'bg-green-100 text-green-700 border-green-200'
+                  : p.stage.includes('Phase 2') || p.stage.includes('临床II')
+                  ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                  : p.stage.includes('Phase 1') || p.stage.includes('临床I')
+                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                  : 'bg-gray-100 text-gray-600 border-gray-200';
+                const progressPct = p.stage.includes('上市') || p.stage.includes('Approved') ? 100
+                  : p.stage.includes('Phase 3') ? 80
+                  : p.stage.includes('Phase 2') || p.stage.includes('临床II') ? 60
+                  : p.stage.includes('Phase 1') || p.stage.includes('临床I') ? 30
+                  : p.stage.includes('Pre') || p.stage.includes('临床前') ? 10 : 5;
+                return (
+                  <div key={i} className="bg-indigo-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-indigo-700 text-sm">{p.code}</span>
+                        <span className="text-xs text-gray-500">{p.type}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${phaseColor}`}>{p.stage}</span>
+                    </div>
+                    {/* 进度条 */}
+                    <div className="w-full bg-indigo-100 rounded-full h-1.5 mb-2">
+                      <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">适应证：{p.indication}</span>
+                      <span className="text-xs text-gray-400">{progressPct}%</span>
+                    </div>
+                    {p.note && <p className="text-xs text-gray-400 mt-1">备注：{p.note}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </InfoCard>
+        )}
+
+        {/* 合作机构 */}
+        {(team as any).enterprise?.collaborations?.length > 0 && (
+          <InfoCard icon="🤝" title="合作机构" color="cyan">
+            <div className="space-y-2 mt-1">
+              {(team as any).enterprise.collaborations.map((c: string, i: number) => {
+                const type = c.includes('医院') ? { icon: '🏥', label: '医院', cls: 'bg-red-50 text-red-600 border-red-200' }
+                  : c.includes('大学') || c.includes('学院') ? { icon: '🎓', label: '院校', cls: 'bg-blue-50 text-blue-600 border-blue-200' }
+                  : c.includes('研究') ? { icon: '🔬', label: '研究所', cls: 'bg-purple-50 text-purple-600 border-purple-200' }
+                  : { icon: '🏢', label: '企业', cls: 'bg-gray-50 text-gray-600 border-gray-200' };
+                return (
+                  <div key={i} className="flex items-center gap-2 py-1.5">
+                    <span className="text-base flex-shrink-0">{type.icon}</span>
+                    <span className="text-xs text-gray-700 flex-1 leading-snug">{c}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full text-xs border font-medium ${type.cls}`}>{type.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </InfoCard>
+        )}
+
+        {/* 发展里程碑（横向时间轴） */}
+        {(team as any).enterprise?.milestones?.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-3">同类型团队</p>
-            <div className="space-y-2">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📅 发展里程碑</p>
+            <div className="relative">
+              <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200" />
+              <div className="flex justify-between overflow-x-auto gap-2 pb-1">
+                {(team as any).enterprise.milestones.slice(0, 6).map((m: any, i: number) => (
+                  <div key={i} className="flex flex-col items-center flex-shrink-0" style={{ minWidth: '80px' }}>
+                    <div className="relative z-10 w-8 h-8 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center mb-1.5">
+                      <span className="text-xs font-bold text-gray-600">{m.year.slice(-2)}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-600 text-center leading-snug">{m.year}</span>
+                    <span className="text-[10px] text-gray-400 text-center leading-snug mt-0.5 line-clamp-2">{m.event}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 同类型团队 */}
+        {relatedTeams.length > 0 && (
+          <InfoCard icon="🔗" title="同类型团队" color="gray">
+            <div className="space-y-2 mt-1">
               {relatedTeams.map(t => (
                 <button key={t.id} onClick={() => onTeamClick(t.id)}
-                  className="w-full text-left flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                  <div>
+                  className="w-full text-left flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 border border-transparent hover:border-gray-200 transition">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800">{t.nameShort}</p>
-                    <p className="text-xs text-gray-400">{t.leader}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{t.leader} · {t.location}</p>
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {t.tags.slice(0, 2).map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">{tag}</span>
+                      ))}
+                    </div>
                   </div>
-                  <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               ))}
             </div>
-          </div>
+          </InfoCard>
         )}
       </div>
     </div>
@@ -615,63 +763,186 @@ function AIAppCard({ app, onClick }: { app: AIApp; onClick: () => void }) {
 
 // ── AI App Detail ─────────────────────────────────────────
 function AIAppDetail({ app, onBack }: { app: AIApp; onBack: () => void }) {
+  // 成熟度颜色映射（用于badge展示）
+  const maturityBadge = (m: string) => {
+    const map: Record<string, { cls: string; label: string }> = {
+      '实验室':   { cls: 'bg-gray-100 text-gray-600 border-gray-300', label: '🔬 实验室' },
+      '临床验证': { cls: 'bg-blue-100 text-blue-700 border-blue-300', label: '🏥 临床验证' },
+      '已商业化': { cls: 'bg-purple-100 text-purple-700 border-purple-300', label: '💰 已商业化' },
+    };
+    const b = map[m] || { cls: 'bg-gray-100 text-gray-600 border-gray-300', label: m };
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${b.cls}`}>{b.label}</span>;
+  };
+
+  // 证据级别颜色映射
+  const evidenceBadge = (e?: string) => {
+    if (!e) return null;
+    const map: Record<string, string> = {
+      'case-report': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      '队列': 'bg-blue-50 text-blue-700 border-blue-200',
+      'RCT': 'bg-green-50 text-green-700 border-green-200',
+      '荟萃分析': 'bg-purple-50 text-purple-700 border-purple-200',
+      '指南': 'bg-rose-50 text-rose-700 border-rose-200',
+    };
+    return <span className={`px-2 py-0.5 rounded-full text-xs border font-medium ${map[e] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>📊 {e}</span>;
+  };
+
+  // 监管状态
+  const regulatoryStatus = (app as any).regulatoryStatus;
+  const regulatoryBadges = regulatoryStatus ? (Array.isArray(regulatoryStatus) ? regulatoryStatus : [regulatoryStatus]).map((s: string) => {
+    const cls = s.includes('FDA') ? 'bg-green-100 text-green-700 border-green-200'
+      : s.includes('NMPA') ? 'bg-red-100 text-red-700 border-red-200'
+      : s.includes('EMA') ? 'bg-blue-100 text-blue-700 border-blue-200'
+      : 'bg-gray-100 text-gray-600 border-gray-200';
+    return <span key={s} className={`px-2 py-0.5 rounded-full text-xs border font-medium ${cls}`}>🏛️ {s}</span>;
+  }) : null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition"><BackIcon /></button>
-          <div className="flex-1">
-            <h1 className="text-base font-bold text-gray-900">{app.name}</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-gray-900 truncate">{app.name}</h1>
             <p className="text-xs text-gray-400">{app.institution} · {app.location}</p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-shrink-0">
             <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${typeColors[app.type]}`}>{app.type}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${maturityColors[app.maturity]}`}>{app.maturity}</span>
           </div>
         </div>
       </div>
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <p className="text-xs font-bold text-purple-700 mb-2">技术方向</p>
-          <div className="flex flex-wrap gap-2">
+        {/* 基本信息卡 */}
+        <InfoCard icon="ℹ️" title="基本信息" color="gray">
+          <div className="grid grid-cols-2 gap-3 mt-1">
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">机构</p>
+              <p className="text-xs text-gray-800 font-medium leading-snug">{app.institution}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">位置</p>
+              <p className="text-xs text-gray-800 font-medium leading-snug">{app.location}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">类型</p>
+              <p className="text-xs text-gray-800 font-medium leading-snug">{app.type}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">成熟度</p>
+              {maturityBadge(app.maturity)}
+            </div>
+          </div>
+          {/* 第3行：证据级别 + 监管状态 */}
+          {(app as any).evidenceLevel && (
+            <div className="bg-gray-50 rounded-lg p-3 mt-2">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">证据级别</p>
+              <div className="flex flex-wrap gap-1.5">
+                {evidenceBadge((app as any).evidenceLevel)}
+              </div>
+            </div>
+          )}
+          {regulatoryBadges && (
+            <div className="bg-gray-50 rounded-lg p-3 mt-2">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1.5">监管状态</p>
+              <div className="flex flex-wrap gap-1.5">
+                {regulatoryBadges}
+              </div>
+            </div>
+          )}
+        </InfoCard>
+
+        {/* 技术方向标签卡 */}
+        <InfoCard icon="🧠" title="技术方向" color="blue">
+          <div className="flex flex-wrap gap-2 mt-1">
             {app.techAreas.map(t => (
-              <span key={t} className="px-2.5 py-1 bg-white border border-purple-200 rounded-full text-xs text-purple-700 font-medium">{t}</span>
+              <span key={t} className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs text-blue-700 font-medium">{t}</span>
             ))}
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-xs font-bold text-gray-400 uppercase mb-2">应用描述</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{app.description}</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-green-700 mb-2">关键成果</p>
-          <p className="text-sm text-green-800 leading-relaxed">{app.keyResult}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-2">FMT环节</p>
-            <p className="text-sm text-gray-800 font-medium">{app.fmtStage}</p>
+        </InfoCard>
+
+        {/* 应用描述卡 */}
+        <InfoCard icon="📋" title="应用描述" color="gray">
+          <p className="text-sm text-gray-700 leading-relaxed mt-1 whitespace-pre-line">{app.description}</p>
+        </InfoCard>
+
+        {/* 关键成果卡 */}
+        <InfoCard icon="🏆" title="关键成果" color="green">
+          <div className="mt-1 bg-green-50 rounded-lg p-4">
+            <p className="text-sm text-green-800 leading-relaxed">{app.keyResult}</p>
+            {/* 提取数字高亮 */}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {Array.from(app.keyResult.matchAll(/(\d+)/g)).slice(0, 3).map((m, i) => (
+                <span key={i} className="px-2 py-0.5 bg-green-100 rounded text-xs font-bold text-green-700">{m[0]}</span>
+              ))}
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-2">成熟度</p>
-            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${maturityColors[app.maturity]}`}>{app.maturity}</span>
+        </InfoCard>
+
+        {/* FMT环节卡：流程图样式 */}
+        <InfoCard icon="🔄" title="FMT环节" color="violet">
+          <div className="mt-2 bg-violet-50 rounded-lg p-4">
+            <p className="text-sm font-bold text-violet-800">{app.fmtStage}</p>
           </div>
-        </div>
+        </InfoCard>
+
+        {/* 局限性卡（新增） */}
+        {(app as any).limitations && (
+          <InfoCard icon="⚠️" title="局限性" color="red">
+            <p className="text-sm text-red-700 leading-relaxed mt-1 whitespace-pre-line">{(app as any).limitations}</p>
+          </InfoCard>
+        )}
+
+        {/* 未来方向卡（新增） */}
+        {(app as any).futureDirections && (
+          <InfoCard icon="🔮" title="未来方向" color="blue">
+            <div className="mt-1 space-y-1.5">
+              {String((app as any).futureDirections).split(/[；;；\n]/).filter(Boolean).map((d: string, i: number) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-blue-700 leading-relaxed">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span>{d.trim()}</span>
+                </div>
+              ))}
+            </div>
+          </InfoCard>
+        )}
+
+        {/* 相关文献卡（新增） */}
+        {(app as any).relatedPMID?.length > 0 && (
+          <InfoCard icon="📚" title="相关文献" color="green">
+            <div className="space-y-2 mt-1">
+              {((app as any).relatedPMID as string[]).map((pmid: string, i: number) => (
+                <a key={i} href={`https://pubmed.ncbi.nlm.nih.gov/${pmid.replace(/\D/g, '')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2.5 bg-green-50 rounded-lg hover:bg-green-100 border border-transparent hover:border-green-200 transition">
+                  <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0 border border-green-200">P</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-medium text-green-800">PubMed ID: {pmid}</span>
+                  </div>
+                  <ExternalIcon />
+                </a>
+              ))}
+            </div>
+          </InfoCard>
+        )}
+
+        {/* 来源链接卡 */}
+        {app.sourceUrl && (
+          <InfoCard icon="📖" title="来源链接" color="gray">
+            <a href={app.sourceUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 mt-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition">
+              <span className="text-xs text-blue-600 underline break-all">{app.sourceLabel || app.sourceUrl}</span>
+              <ExternalIcon />
+            </a>
+          </InfoCard>
+        )}
+
+        {/* 官网按钮 */}
         {app.website ? (
           <a href={app.website} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition">
-            访问官网 <ExternalIcon />
+            🌐 访问官网 <ExternalIcon />
           </a>
         ) : null}
-        {app.sourceUrl && (
-          <a href={app.sourceUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 w-full py-2.5 px-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition mt-2">
-            <span className="text-gray-400 shrink-0">📚</span>
-            <span className="font-bold text-gray-500 shrink-0">来源：</span>
-            <span className="underline break-all">{app.sourceLabel || app.sourceUrl}</span>
-            <span className="text-gray-300 shrink-0 ml-auto">↗</span>
-          </a>
-        )}
       </div>
     </div>
   );
@@ -719,9 +990,43 @@ function ScienceLitTab({
   const scienceBadge = (year: number, volume: string) => (
     <span className="px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-xs text-red-600 font-bold">Science</span>
   );
-  const litBadge = (grade: string) => (
-    <span className="px-1.5 py-0.5 bg-purple-50 border border-purple-200 rounded text-xs text-purple-600 font-bold">文献</span>
-  );
+  const litBadge = (item: any) => {
+    const grade = item.evidenceGrade || '';
+    const oxfordMatch = grade.match(/Oxford\s*([1-5][a-b]?)/i);
+    const gradeMatch = grade.match(/GRADE\s*([A-D])/i);
+    const isPositive = item.effectiveness === 'positive' ||
+      (item.effectiveness !== 'negative' && grade.includes('✅')) ||
+      item.keyFindings?.[0]?.toLowerCase().includes('显著') ||
+      item.keyFindings?.[0]?.toLowerCase().includes('治愈率') ||
+      item.keyFindings?.[0]?.toLowerCase().includes('缓解率') ||
+      item.keyFindings?.[0]?.toLowerCase().includes('应答率');
+
+    return (
+      <div className="flex items-center gap-1 flex-wrap">
+        <span className="px-1.5 py-0.5 bg-purple-50 border border-purple-200 rounded text-xs text-purple-600 font-bold">文献</span>
+        {oxfordMatch && (
+          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+            oxfordMatch[1].startsWith('1') ? 'bg-green-50 text-green-700 border border-green-200' :
+            oxfordMatch[1].startsWith('2') ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+            'bg-gray-50 text-gray-600 border border-gray-200'
+          }`}>{oxfordMatch[1]}</span>
+        )}
+        {gradeMatch && (
+          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+            gradeMatch[1] === 'A' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+            gradeMatch[1] === 'B' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+            gradeMatch[1] === 'C' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+            'bg-red-50 text-red-700 border border-red-200'
+          }`}>G{gradeMatch[1]}</span>
+        )}
+        {isPositive ? (
+          <span className="px-1.5 py-0.5 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-medium">✓ 支持</span>
+        ) : item.effectiveness === 'negative' && (
+          <span className="px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-medium">✗ 阴性</span>
+        )}
+      </div>
+    );
+  };
 
   const Card = ({
     item, badge, onClick,
@@ -747,9 +1052,7 @@ function ScienceLitTab({
             )}
           </div>
           <h3 className="text-sm font-bold text-gray-900 group-hover:text-indigo-700 transition leading-snug line-clamp-2">{item.title}</h3>
-          <p className="text-xs text-gray-500 mt-1 truncate">
-            {Array.isArray(item.authors) ? item.authors.slice(0, 3).join(', ') + (item.authors.length > 3 ? ` +${item.authors.length - 3}` : '') : ''}
-          </p>
+          <p className="text-xs text-gray-400 leading-relaxed mt-0.5">{item.journal} · {item.year}</p>
           {(item.targetIndication || item.disease) && (
             <span className="inline-block mt-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded text-xs text-indigo-600">{item.targetIndication || item.disease}</span>
           )}
@@ -832,7 +1135,7 @@ function ScienceLitTab({
                   .filter(l => filtered.diseases.some(d => (l as any).disease?.includes(d)))
                   .map(l => (
                     <Card key={l.id} item={l}
-                      badge={litBadge(l.evidenceGrade)}
+                      badge={litBadge(l)}
                       onClick={() => onSelectLit(l)} />
                   ))}
               </div>
@@ -840,7 +1143,7 @@ function ScienceLitTab({
               <div className="space-y-2">
                 {literature.map(l => (
                   <Card key={l.id} item={l}
-                    badge={litBadge(l.evidenceGrade)}
+                    badge={litBadge(l)}
                     onClick={() => onSelectLit(l)} />
                 ))}
               </div>
@@ -1191,7 +1494,7 @@ function LiteratureDetail({ entry, onBack }: { entry: any; onBack: () => void })
 // ── Disease Tab ──────────────────────────────────────────
 function DiseaseTab({ onSelect, query = '' }: { onSelect: (d: Disease) => void; query?: string }) {
   const [activeCategory, setActiveCategory] = useState('全部');
-  const categories = ["全部","感染性疾病","炎症性肠病","功能性胃肠病","神经系统疾病","肝脏疾病","神经发育障碍","代谢性疾病","感染防控"];
+  const categories = ["全部","感染性疾病","炎症性肠病","功能性胃肠病","神经系统疾病","肝脏疾病","神经发育障碍","代谢性疾病","感染防控","肿瘤与免疫"];
   const filtered = useMemo(() => {
     let r = searchDiseases(query);
     if (activeCategory !== '全部') r = r.filter(d => d.category === activeCategory);

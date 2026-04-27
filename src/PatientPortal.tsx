@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { patientEduArticles, type PatientEduArticle } from './data/patientEdu';
+import { diseases, type Disease } from './data/diseases';
 import { search, type SearchRecord } from './data/searchIndex';
 import { callGLMStream, cleanMarkdown } from './lib/aiSearch';
 import PatientEduDetail from './PatientEduDetail';
@@ -46,6 +47,94 @@ function ArticleCard({ article, onClick }: { article: PatientEduArticle; onClick
         </svg>
       </div>
     </button>
+  );
+}
+
+function DiseaseCard({ disease }: { disease: Disease }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Parse patientCriteria into suitable/not suitable sections
+  const criteriaParts = disease.patientCriteria
+    ? disease.patientCriteria.split('不适合FMT').filter(Boolean)
+    : [];
+  const suitableText = criteriaParts[0] || '';
+  const notSuitableText = criteriaParts.length > 1 ? `不适合FMT${criteriaParts.slice(1).join('不适合FMT')}` : '';
+
+  // Truncate long text for card preview
+  const TRUNCATE_LIMIT = 120;
+  const suitablePreview = suitableText.length > TRUNCATE_LIMIT
+    ? suitableText.slice(0, TRUNCATE_LIMIT) + '…'
+    : suitableText;
+  const notSuitablePreview = notSuitableText.length > TRUNCATE_LIMIT
+    ? notSuitableText.slice(0, TRUNCATE_LIMIT) + '…'
+    : notSuitableText;
+
+  const hasContent = disease.patientCriteria || disease.contraindications;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 transition hover:shadow-md hover:border-emerald-200">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">✅ 适应证</span>
+            {disease.gradeLabel && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium"
+                style={{ backgroundColor: disease.gradeColor + '30', color: disease.gradeColor }}>
+                {disease.gradeLabel}
+              </span>
+            )}
+          </div>
+          <h3 className="text-base font-bold text-gray-900 leading-snug">{disease.name}</h3>
+        </div>
+        {hasContent && (
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="ml-2 flex-shrink-0 w-7 h-7 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition text-sm"
+          >
+            {expanded ? '▲' : '▼'}
+          </button>
+        )}
+      </div>
+
+      {/* Content */}
+      {disease.patientCriteria && (
+        <div className="space-y-2 mb-3">
+          {/* 适合FMT */}
+          <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2">
+            <p className="text-xs font-semibold text-green-700 mb-1">✅ 适合FMT</p>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {expanded ? suitableText : suitablePreview}
+            </p>
+          </div>
+          {/* 不适合FMT */}
+          {notSuitableText && (
+            <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+              <p className="text-xs font-semibold text-red-600 mb-1">❌ 不适合FMT</p>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                {expanded ? notSuitableText : notSuitablePreview}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 禁忌证 */}
+      {disease.contraindications && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-3">
+          <p className="text-xs font-semibold text-gray-500 mb-1">⚠️ 禁忌证</p>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            {expanded ? disease.contraindications : (disease.contraindications.length > TRUNCATE_LIMIT ? disease.contraindications.slice(0, TRUNCATE_LIMIT) + '…' : disease.contraindications)}
+          </p>
+        </div>
+      )}
+
+      {/* Disclaimer */}
+      <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 flex items-start gap-2">
+        <span className="text-amber-400 text-xs flex-shrink-0 mt-0.5">⚠️</span>
+        <p className="text-xs text-amber-700 leading-relaxed">具体是否适合FMT，请咨询专业医生</p>
+      </div>
+    </div>
   );
 }
 
@@ -130,6 +219,11 @@ export default function PatientPortal({ onLogout, onOpenUserCenter }: { onLogout
   const filteredArticles = useMemo(() => {
     if (activeCategory === '全部' || activeCategory === '医院地图') return patientEduArticles;
     return patientEduArticles.filter(a => a.category === activeCategory);
+  }, [activeCategory]);
+
+  const filteredDiseases = useMemo(() => {
+    if (activeCategory !== '适应证') return [];
+    return diseases;
   }, [activeCategory]);
 
   // 单独触发AI搜索（AI按钮直接调用）
@@ -348,6 +442,17 @@ export default function PatientPortal({ onLogout, onOpenUserCenter }: { onLogout
           <div className="max-w-4xl mx-auto px-4 py-4 space-y-3">
             {activeCategory === '医院地图' ? (
               <HospitalMapPanel />
+            ) : activeCategory === '适应证' && filteredDiseases.length > 0 ? (
+              <>
+                <p className="text-xs text-gray-400 mb-1">
+                  已收录{filteredDiseases.length}种FMT适应疾病
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredDiseases.map(disease => (
+                    <DiseaseCard key={disease.id} disease={disease} />
+                  ))}
+                </div>
+              </>
             ) : filteredArticles.length > 0 ? (
               <>
                 <p className="text-xs text-gray-400 mb-1">

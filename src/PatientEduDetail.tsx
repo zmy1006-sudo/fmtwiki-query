@@ -117,37 +117,67 @@ const PatientEduDetail: React.FC<PatientEduDetailProps> = ({ article, onBack, on
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-          {/* Meta info */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${categoryColors[article.category] || 'bg-gray-100 text-gray-600'}`}>
-              {article.category}
-            </span>
-            {article.source && (
-              <span className="text-xs text-gray-400">📚 {article.source}</span>
-            )}
-            <span className="text-xs text-gray-400 ml-auto">更新：{article.lastUpdated}</span>
-          </div>
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1.5">
-            {article.tags.map(tag => (
-              <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">{tag}</span>
-            ))}
-          </div>
-
-          {/* Summary */}
+          {/* 文章分类标签卡 */}
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <p className="text-sm text-emerald-800 leading-relaxed font-medium">{article.summary}</p>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🏷️</span>
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">文章分类</p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${categoryColors[article.category] || 'bg-gray-100 text-gray-600'}`}>
+                {article.category}
+              </span>
+            </div>
           </div>
 
-          {/* Article content */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-            <div className="text-gray-700 leading-[1.9] text-[15px]" style={{ fontSize: '15px', lineHeight: '1.9' }}>
+          {/* 核心摘要卡 */}
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm">📝</span>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-600">核心摘要</p>
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed">{article.summary}</p>
+          </div>
+
+          {/* 正文内容卡 */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm">📄</span>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-600">正文内容</p>
+            </div>
+            <div className="text-gray-700" style={{ fontSize: '15px', lineHeight: '1.9' }}>
               {renderContent(article.content)}
             </div>
           </div>
 
-          {/* Source URL */}
+          {/* 关键词标签卡 */}
+          {article.tags && article.tags.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">🔑</span>
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-700">关键词</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {article.tags.map(tag => (
+                  <span key={tag} className="px-2.5 py-1 bg-white border border-blue-200 text-blue-700 rounded-full text-xs font-medium">{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 参考文献卡 */}
+          {article.source && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">📚</span>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">参考文献</p>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">{article.source}</p>
+            </div>
+          )}
+
+          {/* 原文来源 */}
           {article.sourceUrl && (
             <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 hover:bg-blue-50 hover:border-blue-200 transition">
@@ -157,8 +187,10 @@ const PatientEduDetail: React.FC<PatientEduDetailProps> = ({ article, onBack, on
 
           {/* Related articles */}
           {relatedArticles.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <p className="text-sm font-bold text-gray-700 mb-3">📖 同类文章推荐</p>
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3 flex items-center gap-2">
+                <span>📖</span> 同类文章推荐
+              </p>
               <div className="space-y-3">
                 {relatedArticles.map(a => (
                   <button key={a.id} onClick={() => onRelatedClick(a)}

@@ -41,7 +41,7 @@ export const gutBrainAxis: AxisMechanism['keyPathways'] = [
       '5-HT调节情绪、睡眠、食欲、认知功能',
       'FMT后血清素水平改善 → 情绪/行为变化（ASD/Parkinson/Depression）',
     ],
-    clinicalEvidence: 'Kang ASD RCT 2025（PMID 39567890）：FMT改善儿童行为症状，5-HT代谢改变；Sampson Cell 2016（PMID 27912077）：PD小鼠肠道菌群→神经炎症',
+    clinicalEvidence: 'Kang ASD RCT 2025（PMID 28122648）：FMT改善儿童行为症状，5-HT代谢改变；Sampson Cell 2016（PMID 27912077）：PD小鼠肠道菌群→神经炎症',
   },
   {
     name: 'GABA（γ-氨基丁酸）通路',
@@ -250,7 +250,7 @@ export const axisDiseaseMatrix: {
         disease: 'ASD（孤独症谱系障碍）',
         primaryMechanisms: ['5-HT代谢异常', 'GABA信号改变', '系统性炎症（IL-6/TNF-α）', '迷走神经信号异常'],
         evidenceGrade: 'Oxford 1b · GRADE C',
-        keyRef: 'Kang Sci Rep 2025 PMID 39567890',
+        keyRef: 'Kang Sci Rep 2025 PMID 28122648',
       },
       {
         disease: '帕金森病（Parkinson）',
