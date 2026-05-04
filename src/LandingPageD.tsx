@@ -223,7 +223,7 @@ export default function LandingPageD({ onEnterDoctor, onEnterPatient }: Props) {
   }, [countersDone]);
 
   function animateCounts() {
-    const targets = { ind: 14, teams: 21, ai: 19, edu: 35, pct: 100 };
+    const targets = { ind: 14, teams: 42, ai: 19, edu: 35, pct: 100 };
     const dur = 1400, s = Date.now();
     const tick = () => {
       const p = Math.min((Date.now() - s) / dur, 1);

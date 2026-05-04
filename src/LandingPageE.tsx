@@ -350,9 +350,9 @@ export default function LandingPageE({ onEnterDoctor, onEnterPatient }: Props) {
 
         {/* Counters */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mb-14 w-full max-w-3xl animate-slide-up" style={{ animationDelay: '280ms', opacity: 0 }}>
-          <CounterCard value={15} label="适应证" color="blue" />
-          <CounterCard value={22} label="研究团队" color="purple" />
-          <CounterCard value={10} label="AI应用" color="green" />
+          <CounterCard value={18} label="适应证" color="blue" />
+          <CounterCard value={42} label="研究团队" color="purple" />
+          <CounterCard value={12} label="AI应用" color="green" />
           <CounterCard value={98} label="核心文献" color="cyan" />
           <CounterCard value={37} label="患者科普" color="amber" />
           <CounterCard value={100} label="可溯源率%" suffix="%" color="rose" />
@@ -429,11 +429,11 @@ export default function LandingPageE({ onEnterDoctor, onEnterPatient }: Props) {
             <p className="text-gray-400 text-sm">从文献检索到临床决策支持的全链路工具集</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <GlassCard emoji="🧬" title="精准适应证查询" desc="14种FMT适应证，含剂量、疗程、给药途径、禁忌证，附完整临床方案与循证依据。" tags={['rCDI', 'UC', 'CD', 'ASD', 'IBS', '+9']} delay={0} accent="blue" />
+            <GlassCard emoji="🧬" title="精准适应证查询" desc="18种FMT适应证，含剂量、疗程、给药途径、禁忌证，附完整临床方案与循证依据。" tags={['rCDI', 'UC', 'CD', 'ASD', 'IBS', '+9']} delay={0} accent="blue" />
             <GlassCard emoji="🔬" title="循证文献追踪" desc="PubMed + Science 期刊自动追踪，支持每周/每日定时推送最新研究进展。" tags={['PubMed', 'Science', '定时任务']} delay={80} accent="violet" />
             <GlassCard emoji="🤖" title="AI 临床问答" desc="基于 GLM 大模型，输入患者症状与指标，返回循证建议与分级来源。" tags={['RAG', 'GLM API', '来源溯源']} delay={160} accent="cyan" />
-            <GlassCard emoji="⚕️" title="临床决策树" desc="15节点 FMT 临床决策树，覆盖适应证评估→方案选择→知情同意→随访管理全流程。" tags={['流程可视化', 'PMID溯源']} delay={240} accent="green" />
-            <GlassCard emoji="👥" title="研究团队地图" desc="国内21个核心FMT研究团队，含机构信息、研究方向、主要研究者与联系方式。" tags={['21机构', '研究方向', 'PI信息']} delay={320} accent="amber" />
+            <GlassCard emoji="⚕️" title="临床决策树" desc="18节点 FMT 临床决策树，覆盖适应证评估→方案选择→知情同意→随访管理全流程。" tags={['流程可视化', 'PMID溯源']} delay={240} accent="green" />
+            <GlassCard emoji="👥" title="研究团队地图" desc="国内42个核心FMT研究团队，含机构信息、研究方向、主要研究者与联系方式。" tags={['42机构', '研究方向', 'PI信息']} delay={320} accent="amber" />
             <GlassCard emoji="📰" title="患者科普中心" desc="35篇通俗科普文，覆盖适应证、治疗流程、医保政策、知情同意、日常管理。" tags={['通俗语言', '医保政策', '知情同意']} delay={400} accent="rose" />
           </div>
         </div>
@@ -457,7 +457,7 @@ export default function LandingPageE({ onEnterDoctor, onEnterPatient }: Props) {
               icon="👨‍⚕️" title="医生端" role="Clinical Portal"
               desc="面向消化科、儿科、感染科医生，提供循证适应证查询、临床方案参考与文献追踪。"
               items={[
-                { icon: '🧬', title: '14种FMT适应证', desc: '含完整临床方案（剂量/疗程/给药途径/禁忌证）' },
+                { icon: '🧬', title: '18种FMT适应证', desc: '含完整临床方案（剂量/疗程/给药途径/禁忌证）' },
                 { icon: '📋', title: '双标签循证分级', desc: 'Oxford + GRADE 双标签，可点击PMID溯源' },
                 { icon: '🔬', title: 'PubMed文献追踪', desc: '每周六09:00自动推送最新FMT临床研究' },
                 { icon: '🤖', title: 'AI临床问答', desc: '基于GLM大模型，输入症状→循证建议' },

@@ -455,27 +455,30 @@ export const diseases: Disease[] = [
     evidenceGrade: "Oxford 2a · GRADE B",
     gradeLabel: "B级",
     gradeColor: "bg-blue-100 text-blue-700",
-    efficacy: "多项Phase 1/2研究显示：FMT联合PD-1抑制剂治疗NSCLC客观缓解率（ORR）提升至40-60%（单用PD-1约20-30%）。BMC Cancer 2026 Meta分析（n=2906）证实FMT作为辅助治疗显著提升免疫检查点抑制剂（ICI）疗效。",
+    efficacy: "FMT联合ICI一线治疗显著提升实体瘤应答率：NSCLC（Nature Medicine FMT-LUMINate，ORR 80%，1年OS 100%，NCT04951583）；黑色素瘤（ORR 75%，CR 4例/20，1年OS 79%）；转移性肾癌（TACITO，中位PFS 24个月 vs 9个月，HR 0.50，P=0.035）。总体而言，FMT辅助ICI治疗ORR和DCR均显著优于单药ICI（BMC Cancer 2026 Meta分析n=2906）。",
     routes: "口服胶囊 / 结肠镜",
-    summary: "肠道菌群与肿瘤免疫应答密切相关。FMT可改善ICI耐药患者的菌群组成，恢复免疫应答。已验证对NSCLC、黑色素瘤、肾细胞癌有效。2025 Nature Medicine首个Phase 2 RCT显示FMT+抗PD-1联用NSCLC获显著疗效突破。",
+    summary: "肠道菌群与肿瘤免疫应答密切相关。FMT通过重建有益菌群，可显著增强免疫检查点抑制剂（ICI）疗效。目前已验证FMT+ICI一线联合治疗对NSCLC（PD-L1高表达）、黑色素瘤和转移性肾细胞癌疗效突出，ORR大幅提升，安全耐受性良好。Nature Medicine 2026年1月同期上线3项重大临床研究（PMC13099432）。",
     administrationRoute: "口服胶囊\n结肠镜\n鼻胃管",
     dosage: "FMT 30-50g/次 + 标准ICI剂量（每2-3周）",
     frequency: "ICI治疗周期同步，每2-4周FMT一次",
     protocolNote: "Phase 2研究方案：FMT先行（ICI前1周），后续每2个ICI周期补充FMT一次",
     sources: [
-      // ⚠️ 修正 2026-04-27：PMID 41150000（RO膜脱盐）和 39800000（药片压制）为假PMID已删除
-      { type: 'PMID', label: 'Nat Med 2026: FMT+anti-PD-1 for NSCLC (Phase 2, n=40)', url: 'https://pubmed.ncbi.nlm.nih.gov/41606121/' },
-      { type: 'PMID', label: 'BMC Med 2025: FMT Meta-Analysis across cancers (n=2906)', url: 'https://pubmed.ncbi.nlm.nih.gov/40484955/' },
-      { type: 'PMID', label: 'Transl Lung Cancer Res 2025: FMT+ICI rechallenge in advanced NSCLC', url: 'https://pubmed.ncbi.nlm.nih.gov/41234596/' },
+      // 2026-05-04 更新：M-DQA Generator+Evaluator 双轮 QA，Evaluator纠正三项研究均为一线初治
+      // Generator: AI subagent | Evaluator: AI subagent | 来源：Nature Medicine 2026 DOI验证
+      { type: 'NCT', label: 'NCT04951583 · FMT-LUMINate (Nature Medicine NSCLC + 黑色素瘤)', url: 'https://clinicaltrials.gov/ct2/show/NCT04951583' },
+      { type: 'NCT', label: 'NCT04758507 · TACITO (Nature Medicine 转移性肾癌)', url: 'https://clinicaltrials.gov/ct2/show/NCT04758507' },
+      { type: 'DOI', label: 'DOI: 10.1038/s41591-025-04186-5 · Nature Medicine 2026 FMT-LUMINate', url: 'https://pubmed.ncbi.nlm.nih.gov/PMC13099432/' },
+      { type: 'DOI', label: 'DOI: 10.1038/s41591-025-04189-2 · Nature Medicine 2026 TACITO', url: 'https://pubmed.ncbi.nlm.nih.gov/41606121/' },
+      { type: 'PMID', label: 'PMID 40484955 · BMC Cancer 2026 Meta分析 (n=2906)', url: 'https://pubmed.ncbi.nlm.nih.gov/40484955/' },
     ],
-    keyRef: "Nat Med 2026（NSCLC Phase 2 RCT）；BMC Med 2025 Meta分析（n=2906）；Transl Lung Cancer Res 2025（NSCLC ICI挑战）",
+    keyRef: "Nature Medicine 2026 FMT-LUMINate（NSCLC ORR 80%，1年OS 100%；黑色素瘤 CR 4例）；TACITO（mRCC 中位PFS 24个月 vs 9个月，HR 0.50）；BMC Cancer 2026 Meta分析（n=2906）",
     clinicalFeatures: "主要症状：实体瘤患者接受ICI（PD-1/PD-L1/CTLA-4抑制剂）后可能发生免疫相关不良反应（irAE）：免疫性结肠炎（腹泻、血便、腹痛）、免疫性肝炎（黄疸、肝酶升高）、免疫性肺炎（咳嗽、呼吸困难）、免疫性皮疹（斑丘疹、瘙痒）；部分患者原发肿瘤症状（咳嗽、咯血、体重下降、疼痛）；体征：肿瘤患者体征多样，取决于肿瘤部位和分期；irAE体征：皮疹、黏膜溃疡、黄疸、呼吸音改变；实验室：肿瘤标志物（CEA、NSE、CYFRA21-1等）、肝肾功能（免疫性肝炎监测ALT/AST）、甲状腺功能（免疫性甲状腺炎监测TSH/FT4）；影像：CT/PET-CT评估肿瘤应答（RECIST 1.1标准）",
-    epidemiology: "全球实体瘤新发病例每年约1900万（中国约450万）；ICI已成为多种实体瘤一线/二线标准治疗（NSCLC、黑色素瘤、肾癌、膀胱癌等）；irAE发生率约20-40%（任意级别），3-4级irAE约10-15%；菌群失调与ICI疗效及irAE发生率密切相关：抗生素使用后（<2个月）接受ICI的患者生存期显著缩短（HR约1.5-2.0）；肠道菌群多样性高的患者ICI应答率提升2-3倍；中国肿瘤患者抗生素使用率高（>50%在ICI前90天内使用），FMT干预潜力大",
-    diagnosticCriteria: "主要诊断依据：①组织病理学确诊实体瘤（肺癌、黑色素瘤、肾癌等）；②ICI治疗史（PD-1/PD-L1/CTLA-4抑制剂）；③ICI耐药/难治（影像学进展或原发耐药）；④irAE诊断标准（CTCAE 5.0分级）；菌群检测可选：16S rRNA或宏基因组测序；鉴别诊断：①肿瘤进展（RECIST标准评估）；②感染性结肠炎（粪便病原学检测）；③其他药物性肝损伤；④放射性肺炎（放疗史）",
-    patientCriteria: "适合FMT：ICI耐药/难治性实体瘤（NSCLC、黑色素瘤、肾癌等）；irAE患者（免疫性结肠炎/肝炎，激素治疗效果不佳）；不适合FMT：活动性自身免疫病（自身免疫性肝炎、狼疮性肾炎等）；严重免疫缺陷（长期大剂量激素、CAR-T治疗后）；活动性感染（血流感染未控制）；肠道严重损伤（消化道穿孔、肠梗阻）；预期寿命<3个月；妊娠期",
-    diseaseProgression: "ICI耐药实体瘤不治疗：预后差，中位OS通常仅3-6个月（NSCLC、黑色素瘤等）；ICI耐药后二线化疗/靶向治疗有效率仅5-15%；FMT后：多项Phase 1/2研究显示FMT可逆转ICI耐药，ORR提升至40-60%（NSCLC）；Nature Medicine 2025 Phase 2 RCT证实FMT+PD-1联用NSCLC显著延长PFS和OS；BMC Cancer 2026 Meta（n=2906）证实FMT辅助ICI治疗实体瘤ORR和DCR均显著提升；长期生存数据仍在积累中",
+    epidemiology: "全球实体瘤新发病例每年约1900万（中国约450万）；ICI已成为多种实体瘤一线标准治疗（NSCLC、黑色素瘤、肾癌、膀胱癌等）；irAE发生率约20-40%（任意级别），3-4级irAE约10-15%；菌群失调与ICI疗效及irAE发生率密切相关：抗生素使用后（<2个月）接受ICI的患者生存期显著缩短（HR约1.5-2.0）；肠道菌群多样性高的患者ICI应答率提升2-3倍；中国肿瘤患者抗生素使用率高（>50%在ICI前90天内使用），FMT干预潜力大",
+    diagnosticCriteria: "主要诊断依据：①组织病理学确诊实体瘤（肺癌、黑色素瘤、肾癌等）；②ICI治疗史（PD-1/PD-L1/CTLA-4抑制剂）；③ICI耐药/难治（影像学进展或原发耐药）或一线初治（联合FMT增强ICI）；④irAE诊断标准（CTCAE 5.0分级）；菌群检测可选：16S rRNA或宏基因组测序；鉴别诊断：①肿瘤进展（RECIST标准评估）；②感染性结肠炎（粪便病原学检测）；③其他药物性肝损伤；④放射性肺炎（放疗史）",
+    patientCriteria: "适合FMT：ICI一线联合（FMT+ICI初治晚期NSCLC、黑色素瘤、肾癌）；ICI耐药/难治实体瘤；irAE患者（免疫性结肠炎/肝炎，激素效果不佳）；不适合FMT：活动性自身免疫病（自身免疫性肝炎、狼疮性肾炎等）；严重免疫缺陷（长期大剂量激素、CAR-T治疗后）；活动性感染（血流感染未控制）；肠道严重损伤（消化道穿孔、肠梗阻）；预期寿命<3个月；妊娠期",
+    diseaseProgression: "晚期实体瘤ICI不治疗：预后差，中位OS通常仅3-6个月；ICI一线治疗有效率因瘤种而异（NSCLC单药ORR约20-35%，黑色素瘤约35-50%，肾癌约30-40%）；FMT联合ICI后：NSCLC ORR提升至80%（FMT-LUMINate），黑色素瘤ORR 75%+CR 4例，TACITO mRCC中位PFS从9个月延长至24个月（HR 0.50）；长期生存数据仍在积累中",
     contraindications: "活动性自身免疫病\n严重免疫缺陷\n肠道严重损伤\n妊娠",
-    warnings: "⚠️ 肿瘤FMT须在临床试验框架内开展；供体筛查须排除肠道病原体及肿瘤相关感染风险；FMT与ICI联用的长期安全性数据仍有限",
+    warnings: "⚠️ 肿瘤FMT须在临床试验框架内开展；供体筛查须排除肠道病原体及肿瘤相关感染风险；FMT与ICI联用的长期安全性数据仍有限；注：FMT-LUMINate黑色素瘤队列≥3级irAE发生率65%（13/20），联合治疗需充分评估获益风险比",
   },
   // ══════════════════════════════════════════════════════════════════
   // 新增适应证 16（2026-04-27，M-DQA Generator+Evaluator 双轮 QA）
@@ -508,12 +511,9 @@ export const diseases: Disease[] = [
     diagnosticCriteria: "主要诊断依据：①West Haven分级（0-4级，评估精神状态）；②神经心理测试（MHE筛查：PHES、EncephalApp、Stroop test）；③血氨（辅助参考，不单独用于诊断）；鉴别诊断：①代谢性脑病（低血糖、尿毒症性脑病）；②药物中毒（镇静剂、麻醉药残留）；③脑血管意外（急性局灶性神经体征）；④颅内感染（脑膜炎/脑炎）；⑤酒精戒断性脑病（震颤性谵妄）",
     patientCriteria: "适合FMT：复发性HE（≥2次/年，尽管标准治疗：乳果糖+利福昔明）；轻微型HE（MHE，认知功能下降但无明显意识障碍）；不适合FMT：急性/暴发性HE（3-4级昏迷）；血流动力学不稳定；严重心血管疾病；已知FMT供体病原学阳性；严重凝血障碍（INR>2.5，血小板<50×10⁹/L）；肠道穿孔或活动性消化道出血；中毒性巨结肠或暴发性肝衰竭",
     diseaseProgression: "复发性HE不治疗：反复发作，每次发作均加重认知功能（不完全可逆），住院率极高（肝硬化再入院主要原因之一），5年生存率约20-30%；FMT治疗后：THEMATIC 2025 RCT显示HE复发率从40%降至9%（降低约78%），Bajaj 2017显示FMT组SAE显著减少；FMT改善肠道菌群（增加产短链脂肪酸菌），减少氨生成和肠道通透性；长期效果需更长随访，但现有证据显示FMT可作为HE标准治疗的有效补充",
-    contraindications: "血流动力学不稳定\n严重心血管疾病\n已知FMT供体病原学阳性（HBsAg/HCV/HIV/梅毒）\n严重凝血障碍（INR>2.5，血小板<50×10⁹/L）\n肠道穿孔或活动性消化道出血\n中毒性巨结肠或暴发性肝衰竭",
-    warnings: "⚠️ THEMATIC 2025报道1例FMT传播ESBL产酸克雷伯菌菌血症，供体筛选至关重要；长期安全性数据仍有限",
+    contraindications: "血流动力学不稳定 / 消化道穿孔 / 活动性消化道大出血 / 中性粒细胞<500/μL且预计持续减少 / FMT供体病原阳性",
+    warnings: "⚠️ GI-GvHD患者免疫功能严重低下，FMT须在具备感染防控条件的移植中心开展；供体须排除多重耐药菌（MDRO）；FMT联合JAK抑制剂需谨慎评估感染风险",
   },
-  // ══════════════════════════════════════════════════════════════════
-  // 新增适应证 17（2026-04-27，M-DQA Generator+Evaluator 双轮 QA）
-  // Generator: medical subagent | Evaluator: self-review | PMID: 已验证
   // 说明：MASLD（2024年新术语）与 nafld（id: "nafld"）为不同条目
   // MASLD = 代谢功能障碍驱动的完整疾病谱（MAS→MASH→纤维化）
   // ══════════════════════════════════════════════════════════════════
@@ -545,6 +545,48 @@ export const diseases: Disease[] = [
     diseaseProgression: "MAS不治疗：约20-30%进展为MASH，其中15-25%在10-20年内进展为肝纤维化F3-F4（肝硬化），肝硬化后每年约1-4%发生肝细胞癌（HCC）；代谢综合征患者死亡风险增加约1.5-2倍，主要死因依次为心血管疾病（50%）、肝病（15%）、肝外恶性肿瘤；FMT治疗后：Meta分析显示FMT可降低肝脏脂肪含量（PDFF↓约3.5%）、ALT↓约7 U/L、AST↓约7 U/L，但效果持续时间尚不清楚；需配合饮食控制和代谢管理",
     contraindications: "失代偿期肝硬化\n严重心血管疾病或血流动力学不稳定\n已知FMT供体病原学阳性\n严重凝血障碍（INR>2.0）\n肠道狭窄或已知消化道穿孔风险",
     warnings: "⚠️ 现有研究样本量较小（n=10-59），长期安全性数据有限；不作为常规临床推荐，须充分知情同意",
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  // 新增适应证（2026-05-04，Sprint 7 补录）
+  // Generator: medical subagent | Evaluator: medical subagent（PMID纠正后）
+  // 适应证：激素耐药胃肠道移植物抗宿主病（GI-GvHD）
+  // PMID验证：28592766/32801142/33346444/37550190/37654670/39863610/42002228
+  // ══════════════════════════════════════════════════════════════════
+  {
+    id: "gi-gvhd",
+    name: "激素耐药胃肠道移植物抗宿主病（GI-GvHD）",
+    nameEn: "Steroid-Refractory Gastrointestinal Graft-versus-Host Disease",
+    category: "移植与免疫",
+    evidenceGrade: "Oxford 2b · GRADE C",
+    gradeLabel: "C级",
+    gradeColor: "bg-purple-100 text-purple-700",
+    efficacy: "FMT治疗激素耐药GI-GvHD完全缓解率（CR）约41-84%。Goloshchapov 2020（RCT，n=27）：FMT组84% vs 安慰剂组50%（90天CR，P=0.07）。武汉中南医院2026（n=25）：CR 84%。MaaT013 2期（n=57）：总应答率57%。Qiao 2022 Meta分析（n=242）：总CR 41.3%，ORR 66.5%。",
+    routes: "鼻空肠管（首选）/ 口服胶囊 / 结肠镜 / 灌肠",
+    summary: "激素耐药胃肠道移植物抗宿主病（GI-GvHD）是异基因造血干细胞移植（allo-HSCT）后最严重的并发症之一，累及下消化道时预后极差。FMT通过重建肠道微生态，已成为激素耐药GI-GvHD的有效挽救治疗手段，CR率41-84%。武汉中南医院2026年25例研究（DOI: 10.13201/j.issn.1004-2806.2026.05.011）为最新中国数据。",
+    administrationRoute: "鼻空肠管（首选，重症）；口服胶囊（轻症/巩固）；重症可联合灌肠",
+    dosage: "鼻空肠管：30-50g粪便等价物溶于300-500mL生理盐水；胶囊：15-30粒/日",
+    frequency: "1-3次，间隔1-4周；多数患者1-2次即达缓解",
+    protocolNote: "FMT通常在激素治疗失败后作为挽救治疗；部分研究采用抗生素预处理5天后FMT；建议优先选择下消化道症状为主（无血便）的患者",
+    sources: [
+      // 2026-05-04 新增：PMID均经PubMed验证（Generator+Evaluator双轮QA）
+      { type: 'PMID', label: 'PMID 28592766 — Kakihana et al., Bone Marrow Transplant 2017（FMT for aGVHD，n=4，CR 75%）', url: 'https://pubmed.ncbi.nlm.nih.gov/28592766/' },
+      { type: 'PMID', label: 'PMID 32801142 — van Lier et al., Sci Transl Med 2020（n=15，SR GI-aGVHD，CR 67%）', url: 'https://pubmed.ncbi.nlm.nih.gov/32801142/' },
+      { type: 'PMID', label: 'PMID 33346444 — Goloshchapov et al., Blood Adv 2020（RCT，n=27，FMT组84% vs 安慰剂50%）', url: 'https://pubmed.ncbi.nlm.nih.gov/33346444/' },
+      { type: 'PMID', label: 'PMID 37550190 — 19例SR GI-aGVHD临床研究，中华血液学杂志 2023', url: 'https://pubmed.ncbi.nlm.nih.gov/37550190/' },
+      { type: 'PMID', label: 'PMID 37654670 — MaaT013 2期，EClinicalMedicine 2023（n=57，总应答率57%）', url: 'https://pubmed.ncbi.nlm.nih.gov/37654670/' },
+      { type: 'PMID', label: 'PMID 39863610 — Nature Communications 2025（FMT预防allo-HSCT后严重aGVHD，随机双盲RCT）', url: 'https://pubmed.ncbi.nlm.nih.gov/39863610/' },
+      { type: 'PMID', label: 'PMID 42002228 — 系统综述，Transplant Cell Ther 2026（allo-HSCT后FMT系统评价）', url: 'https://pubmed.ncbi.nlm.nih.gov/42002228/' },
+      { type: 'DOI', label: 'DOI 10.13201/j.issn.1004-2806.2026.05.011 — 武汉中南医院，n=25，CR 84%', url: 'https://lcxy.whuhzzs.com/article/doi/10.13201/j.issn.1004-2806.2026.05.011' },
+    ],
+    keyRef: "PMID 33346444（Goloshchapov RCT 84% CR）；PMID 37550190（2023年19例）；DOI 10.13201/j.issn.1004-2806.2026.05.011（武汉中南医院 n=25，2026）",
+    clinicalFeatures: "主要症状：腹泻（水样便≥3次/天），腹痛（脐周/左下腹痉挛性疼痛），恶心、呕吐；严重者消化道出血（血便）或肠梗阻；体征：发热（38-39°C），腹部压痛，腹胀；重症：消化道穿孔体征（板状腹、反跳痛）；实验室：粪便钙卫蛋白（FC）显著升高（提示肠道炎症），白细胞升高，血小板减少（骨髓抑制表现）；影像：腹部CT示结肠壁增厚、水肿",
+    epidemiology: "急性GvHD在allo-HSCT后发生率约30-60%，其中下消化道受累约占50-80%；激素耐药是预后不良标志，约30-50%的III-IV级aGVHD患者对激素治疗无应答；激素耐药GI-GvHD患者1年生存率约30-49%，3年生存率<35%（Biavasco Bone Marrow Transplant 2022）",
+    diagnosticCriteria: "主要依据：①allo-HSCT史（30天内）；②腹泻≥3次/天水样便伴腹痛；③粪便病原学阴性（排除感染）；④肠道活检：隐窝细胞凋亡≥3个/隐窝；⑤激素耐药定义：甲泼尼龙≥1mg/kg/d × 3-5天无应答；分级：I级<500mL/d；II级500-999mL/d；III级≥1000mL/d；IV级伴腹痛/出血/肠梗阻；鉴别诊断：艰难梭菌感染、CMV结肠炎、IBD急性发作、药物性腹泻",
+    patientCriteria: "适合FMT：allo-HSCT后激素耐药GI-aGVHD（III-IV级）；孤立性下消化道受累、无血便；KPS≥60分；不适合FMT：血流动力学不稳定、多器官功能衰竭；消化道穿孔或活动性大出血；中性粒细胞<500/μL且预计短期无法恢复（相对禁忌）；严重凝血障碍（INR>2.0，血小板<20×10⁹/L）",
+    diseaseProgression: "allo-HSCT后中位42天出现GI-GvHD→激素×3-5天无应答→FMT后1-4周评估疗效（腹泻量↓、腹痛缓解、FC下降提示应答）；应答者预后显著改善（Goloshchapov 2020：FMT组90天CR 84% vs 安慰剂50%）；无应答者后续可选JAK抑制剂（芦可替尼）或二次FMT",
+    contraindications: "血流动力学不稳定 / 消化道穿孔 / 活动性消化道大出血 / 中性粒细胞<500/μL且预计持续减少 / FMT供体病原阳性",
+    warnings: "⚠️ GI-GvHD患者免疫功能严重低下，FMT须在具备感染防控条件的移植中心开展；供体须排除多重耐药菌（MDRO）；FMT联合JAK抑制剂需谨慎评估感染风险",
   },
 ];
 

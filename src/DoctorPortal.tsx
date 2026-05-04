@@ -1548,26 +1548,21 @@ function DiseaseTab({ onSelect, query = '' }: { onSelect: (d: Disease) => void; 
 }
 
 // ── Teams Tab ───────────────────────────────────────────
-function TeamsTab({ onSelect }: { onSelect: (t: Team) => void }) {
-  const [query, setQuery] = useState('');
+function TeamsTab({ onSelect, searchQuery }: { onSelect: (t: Team) => void; searchQuery: string }) {
   const [activeCategory, setActiveCategory] = useState<typeof teamCategories[number]['value'] | '全部'>('全部');
   const filtered = useMemo(() => {
     let r = filterTeams(activeCategory as typeof teamCategories[number]['value']);
-    if (query.trim()) {
-      const q = query.toLowerCase();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
       r = r.filter(t => t.name.includes(q) || t.leader.includes(q) || t.directions.some(d => d.includes(q)));
     }
     return r;
-  }, [query, activeCategory]);
+  }, [searchQuery, activeCategory]);
   return (
     <div>
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-3">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon /></span>
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="搜索团队、专家、研究方向..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-          </div>
+          {/* 搜索已整合至顶层全局搜索栏 */}
           <div className="flex items-center gap-3 mt-3">
             {teamCategories.map(cat => (
               <button key={cat.value} onClick={() => setActiveCategory(cat.value)}
@@ -1599,26 +1594,21 @@ function TeamsTab({ onSelect }: { onSelect: (t: Team) => void }) {
 }
 
 // ── AI Apps Tab ─────────────────────────────────────────
-function AIAppsTab({ onSelect }: { onSelect: (a: AIApp) => void }) {
-  const [query, setQuery] = useState('');
+function AIAppsTab({ onSelect, searchQuery }: { onSelect: (a: AIApp) => void; searchQuery: string }) {
   const [activeType, setActiveType] = useState<AppType | '全部'>('全部');
   const filtered = useMemo(() => {
     let r = filterAIApps(activeType);
-    if (query.trim()) {
-      const q = query.toLowerCase();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
       r = r.filter(a => a.name.includes(q) || a.institution.includes(q) || a.techAreas.some(t => t.includes(q)));
     }
     return r;
-  }, [query, activeType]);
+  }, [searchQuery, activeType]);
   return (
     <div>
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-3">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon /></span>
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="搜索AI应用、技术、机构..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
-          </div>
+          {/* 搜索已整合至顶层全局搜索栏 */}
           <div className="flex gap-2 mt-3">
             {appTypes.map(t => (
               <button key={t.value} onClick={() => setActiveType(t.value)}
@@ -1965,8 +1955,8 @@ export default function DoctorPortal({ onLogout, onOpenUserCenter }: Omit<Doctor
         {view.kind === 'list' && !(searchMode === 'ai' || aiLoading || aiContent) && (
           <>
             {view.tab === 'disease' && <DiseaseTab onSelect={d => setView({ kind: 'disease', disease: d })} query={searchQuery} />}
-            {view.tab === 'teams' && <TeamsTab onSelect={t => setView({ kind: 'team', team: t })} />}
-            {view.tab === 'ai' && <AIAppsTab onSelect={a => setView({ kind: 'aiApp', app: a })} />}
+            {view.tab === 'teams' && <TeamsTab onSelect={t => setView({ kind: 'team', team: t })} searchQuery={searchQuery} />}
+            {view.tab === 'ai' && <AIAppsTab onSelect={a => setView({ kind: 'aiApp', app: a })} searchQuery={searchQuery} />}
             {view.tab === 'scienceLit' && (
               <ScienceLitTab
                 onSelectPaper={p => setView({ kind: 'science', paper: p })}

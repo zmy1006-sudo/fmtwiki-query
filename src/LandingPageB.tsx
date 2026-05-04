@@ -134,7 +134,14 @@ function ForceGraph({ width = 700, height = 420 }: { width?: number; height?: nu
       { id: 'pumch',   label: '北京协和医院',   color: '#f87171' },
       { id: 'zsu6',    label: '中山六院',        color: '#22d3ee' },
       { id: 'sjtu',    label: '上交微生物国重', color: '#c084fc' },
-      { id: 'cuhksz',  label: '港中深',          color: '#fb923c' },
+      { id: 'cuhksz',    label: '港中深',          color: '#fb923c' },
+      { id: 'sh-renji',  label: '上海仁济医院',     color: '#f472b6' },
+      { id: 'sh-zs',     label: '上海中山医院',     color: '#fb923c' },
+      { id: 'pla-301',   label: '北京301医院',      color: '#a78bfa' },
+      { id: 'xijing',    label: '西京医院',         color: '#34d399' },
+      { id: 'westchina', label: '华西医院',         color: '#60a5fa' },
+      { id: 'zs-1st',    label: '中山大一附院',     color: '#facc15' },
+      { id: 'xjtufmt',   label: '西安交大一附院',   color: '#22d3ee' },
     ];
     teams.forEach((t, i) => {
       const angle = (i / teams.length) * Math.PI * 2;

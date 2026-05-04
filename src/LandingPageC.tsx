@@ -342,6 +342,13 @@ function TeamConstellationCanvas() {
       { label: '中山六院', cx: 0.3, cy: 0.75, color: '#22d3ee', r: 9 },
       { label: '上交微生物国重', cx: 0.7, cy: 0.7, color: '#c084fc', r: 9 },
       { label: '港中深', cx: 0.08, cy: 0.45, color: '#fb923c', r: 8 },
+      { label: '上海仁济医院', cx: 0.92, cy: 0.2, color: '#f472b6', r: 9 },
+      { label: '上海中山医院', cx: 0.75, cy: 0.15, color: '#fb923c', r: 8 },
+      { label: '北京301医院', cx: 0.88, cy: 0.35, color: '#a78bfa', r: 9 },
+      { label: '西京医院', cx: 0.55, cy: 0.12, color: '#34d399', r: 8 },
+      { label: '华西医院', cx: 0.35, cy: 0.88, color: '#60a5fa', r: 9 },
+      { label: '中山大一附院', cx: 0.55, cy: 0.88, color: '#facc15', r: 8 },
+      { label: '西安交大一附院', cx: 0.62, cy: 0.08, color: '#22d3ee', r: 8 },
     ];
 
     const loop = () => {

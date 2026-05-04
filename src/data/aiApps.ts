@@ -25,6 +25,29 @@ export type AIApp = {
 
 export const aiApps: AIApp[] = [
   {
+    // ══════════════════════════════════════════════════════════════════
+    // 新增 AI应用（2026-05-04，M-DQA Generator+Evaluator 双轮 QA）
+    // Generator: AI subagent | Evaluator: AI subagent | PMID: 42061404 已验证
+    // 来源：Cell Reports 2026, DOI: 10.1016/j.celrep.2026.117301
+    // ══════════════════════════════════════════════════════════════════
+    id: "ai-mozaic-matching",
+    name: "MOZAIC 供-受体精准匹配系统",
+    institution: "香港中文大学医学院微生物群研究中心 (MagIC) · 新加坡南洋理工大学 (NTU)",
+    location: "香港特别行政区 · 新加坡",
+    type: "AI精准配型",
+    techAreas: ["多组学AI", "ML预测", "LLM/RAG"],
+    description: "MOZAIC（Microbiome Matching Optimization via Artificial Intelligence）是由香港中文大学 MagIC 与新加坡南洋理工大学合作开发的AI驱动供体-受体肠道微生物组精准匹配框架。该框架整合多维度供体-受体微生物群特征（多界微生物+功能谱），预测FMT后受体微生物向供体趋同程度，从而优化供体选择，提升FMT临床疗效。框架基于30个队列515例FMTs、12种疾病的大规模多组学数据训练，其中94个宏基因组为新收集数据。",
+    keyResult: "AUC 0.88（预测FMT后微生物趋同程度），临床结局预测准确率78.7%；建模显示最优匹配组合可使FMT有效率从49.4%提升至71.0%（提升1.44倍，非直接临床观察终点，为模型推算值）。",
+    maturity: "科研探索",
+    fmtStage: "算法研究",
+    tags: ["供体选择", "AI配型", "微生物组", "精准医学", "MOZAIC"],
+    lastUpdated: "2026-05-04",
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42061404/",
+    sourceLabel: "PMID 42061404 · Cell Reports 2026",
+    limitations: "基于回顾性数据分析，前瞻性验证数据有限；多界微生物特征采集成本较高；模型在不同种族人群中的普适性有待验证；对特定疾病（如IBD）亚组的预测性能尚未充分评估。",
+    futureDirections: "前瞻性验证试验；整合宿主免疫指标的多模态模型；扩展至肿瘤FMT-ICI联合治疗供体筛选；开源模型参数供临床机构使用。",
+  },
+  {
     id: "fmtwiki-tracker",
     name: "FMTWiki 自动文献追踪Agent",
     institution: "FMTWiki / OpenClaw",
